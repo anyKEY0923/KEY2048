@@ -6,7 +6,7 @@
     <title>My Custom 2048 Game</title>
     <style>
         :root { --bg-color: #bbada0; --cell-color: rgba(238, 228, 218, 0.35); }
-        body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #faf8ef; font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif; }
+        body { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #faf8ef; font-family: 'Clear Sans', 'Helvetica Neue', Arial, sans-serif; touch-action: none;}
         .score-container { font-size: 25px; font-weight: bold; margin-bottom: 20px; color: #776e65; }
         #game-board { position: relative; width: 400px; height: 400px; background-color: var(--bg-color); border-radius: 6px; padding: 10px; box-sizing: border-box; }
         .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 10px; width: 100%; height: 100%; }
@@ -135,6 +135,26 @@
             if(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) move(e.key);
         });
 
+// 2. 새로 추가할 모바일 터치 이벤트
+        let startX, startY;
+        window.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        });
+
+        window.addEventListener('touchend', (e) => {
+            if (!startX || !startY) return;
+            let endX = e.changedTouches[0].clientX;
+            let endY = e.changedTouches[0].clientY;
+            let diffX = endX - startX;
+            let diffY = endY - startY;
+            if (Math.abs(diffX) > Math.abs(diffY)) {
+                if (Math.abs(diffX) > 30) move(diffX > 0 ? "ArrowRight" : "ArrowLeft");
+            } else {
+                if (Math.abs(diffY) > 30) move(diffY > 0 ? "ArrowDown" : "ArrowUp");
+            }
+            startX = null; startY = null;
+        });
         init();
     </script>
 </body>
