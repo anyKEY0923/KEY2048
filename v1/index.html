@@ -1,26 +1,33 @@
-```html
 <!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 
+<meta name="viewport"
+content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+
 <style>
 
 body{
+margin:0;
+background:#faf8ef;
+font-family:Arial;
 display:flex;
 flex-direction:column;
 align-items:center;
 justify-content:center;
 height:100vh;
-margin:0;
-background:#faf8ef;
-font-family:Arial;
+touch-action:none;
+}
+
+h2{
+margin-bottom:10px;
 }
 
 #board{
 position:relative;
-width:400px;
-height:400px;
+width:min(92vw,420px);
+height:min(92vw,420px);
 background:#bbada0;
 padding:10px;
 border-radius:6px;
@@ -42,27 +49,17 @@ border-radius:3px;
 
 .tile{
 position:absolute;
-width:87.5px;
-height:87.5px;
 display:flex;
 align-items:center;
 justify-content:center;
-font-size:30px;
-font-weight:bold;
-border-radius:3px;
-
-transition:
-top .16s ease,
-left .16s ease,
-transform .16s ease;
-
+border-radius:4px;
 background-size:cover;
 background-position:center;
-color:transparent;
+transition:top .15s,left .15s;
 }
 
 .tile-merge{
-animation:merge .18s ease;
+animation:merge .18s;
 }
 
 @keyframes merge{
@@ -71,54 +68,76 @@ animation:merge .18s ease;
 100%{transform:scale(1)}
 }
 
-/* 이미지 */
-
-.tile-2 { background-image:url('./images/img_2.jpg'); }
-.tile-4 { background-image:url('./images/img_4.jpg'); }
-.tile-8 { background-image:url('./images/img_8.jpg'); }
-.tile-16 { background-image:url('./images/img_16.jpg'); }
-.tile-32 { background-image:url('./images/img_32.jpg'); }
-.tile-64 { background-image:url('./images/img_64.jpg'); }
-.tile-128 { background-image:url('./images/img_128.jpg'); }
-.tile-256 { background-image:url('./images/img_256.jpg'); }
-.tile-512 { background-image:url('./images/img_512.jpg'); }
-.tile-1024 { background-image:url('./images/img_1024.jpg'); }
-.tile-2048 { background-image:url('./images/img_2048.jpg'); }
-
 </style>
 </head>
 
 <body>
 
-<h2>Score <span id="score">0</span></h2>
+<h2>
+Score <span id="score">0</span>
+&nbsp;&nbsp;
+Best <span id="best">0</span>
+</h2>
 
 <div id="board">
+
 <div class="grid" id="bg"></div>
 <div id="tiles"></div>
+
 </div>
 
 <script>
 
 const SIZE=4
-let board=[]
+
 let tiles=[]
+let board=[]
 let score=0
+let best=localStorage.getItem("bestScore")||0
 let idCounter=0
+let moving=false
+
+let cellSize
+let gap=10
 
 const tileLayer=document.getElementById("tiles")
 const scoreEl=document.getElementById("score")
+const bestEl=document.getElementById("best")
+const boardEl=document.getElementById("board")
+
+bestEl.innerText=best
+
+function calculateLayout(){
+
+let size=boardEl.clientWidth
+
+cellSize=(size-gap*5)/4
+
+tiles.forEach(t=>{
+t.el.style.width=cellSize+"px"
+t.el.style.height=cellSize+"px"
+updateTile(t)
+})
+
+}
 
 function pos(r,c){
+
 return{
-top:r*97.5+10,
-left:c*97.5+10
+top:gap+(cellSize+gap)*r,
+left:gap+(cellSize+gap)*c
 }
+
 }
 
 function createTile(value,r,c){
 
 let el=document.createElement("div")
-el.className=`tile tile-${value}`
+
+el.className="tile"
+el.style.width=cellSize+"px"
+el.style.height=cellSize+"px"
+el.style.backgroundImage=`url('./images/img_${value}.jpg')`
 
 tileLayer.appendChild(el)
 
@@ -143,32 +162,15 @@ let p=pos(tile.r,tile.c)
 
 tile.el.style.top=p.top+"px"
 tile.el.style.left=p.left+"px"
-tile.el.className=`tile tile-${tile.value}`
+
+tile.el.style.backgroundImage=`url('./images/img_${tile.value}.jpg')`
+
+tile.el.className="tile"
 
 if(tile.merged){
 tile.el.classList.add("tile-merge")
 tile.merged=false
 }
-
-}
-
-function spawn(){
-
-let empty=[]
-
-for(let r=0;r<SIZE;r++)
-for(let c=0;c<SIZE;c++)
-if(!board[r][c])
-empty.push({r,c})
-
-if(!empty.length) return
-
-let {r,c}=empty[Math.floor(Math.random()*empty.length)]
-let value=Math.random()<0.9?2:4
-
-board[r][c]=true
-
-createTile(value,r,c)
 
 }
 
@@ -182,11 +184,33 @@ board[t.r][t.c]=t
 
 }
 
-function move(dir){
-
-let moved=false
+function spawn(){
 
 rebuildBoard()
+
+let empty=[]
+
+for(let r=0;r<SIZE;r++)
+for(let c=0;c<SIZE;c++)
+if(!board[r][c])
+empty.push({r,c})
+
+if(!empty.length) return
+
+let {r,c}=empty[Math.floor(Math.random()*empty.length)]
+
+createTile(Math.random()<0.9?2:4,r,c)
+
+}
+
+function move(dir){
+
+if(moving) return
+moving=true
+
+rebuildBoard()
+
+let moved=false
 
 let order=[0,1,2,3]
 
@@ -230,6 +254,7 @@ board[nr][nc]=null
 
 target.value*=2
 target.merged=true
+
 score+=target.value
 
 tile.el.remove()
@@ -247,18 +272,21 @@ tile.r=nr
 tile.c=nc
 
 }
-
 }
-
-if(moved){
 
 tiles.forEach(updateTile)
 
 scoreEl.innerText=score
 
-spawn()
-
+if(score>best){
+best=score
+localStorage.setItem("bestScore",best)
+bestEl.innerText=best
 }
+
+if(moved) spawn()
+
+setTimeout(()=>moving=false,160)
 
 }
 
@@ -267,15 +295,47 @@ if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key))
 move(e.key)
 })
 
+/* 모바일 스와이프 */
+
+let startX=0
+let startY=0
+
+document.addEventListener("touchstart",e=>{
+startX=e.touches[0].clientX
+startY=e.touches[0].clientY
+})
+
+document.addEventListener("touchend",e=>{
+
+let dx=e.changedTouches[0].clientX-startX
+let dy=e.changedTouches[0].clientY-startY
+
+let ax=Math.abs(dx)
+let ay=Math.abs(dy)
+
+if(Math.max(ax,ay)<30) return
+
+if(ax>ay){
+move(dx>0?"ArrowRight":"ArrowLeft")
+}else{
+move(dy>0?"ArrowDown":"ArrowUp")
+}
+
+})
+
 function init(){
+
+calculateLayout()
+
+window.addEventListener("resize",calculateLayout)
+
+board = Array(SIZE).fill().map(()=>Array(SIZE).fill(null))
 
 for(let i=0;i<16;i++){
 let d=document.createElement("div")
 d.className="cell"
 bg.appendChild(d)
 }
-
-board=Array(SIZE).fill().map(()=>Array(SIZE).fill(null))
 
 spawn()
 spawn()
@@ -285,7 +345,5 @@ spawn()
 init()
 
 </script>
-
 </body>
 </html>
-```
