@@ -15,8 +15,16 @@
             position: absolute; width: 87.5px; height: 87.5px;
             display: flex; justify-content: center; align-items: center;
             font-size: 35px; font-weight: bold; border-radius: 3px;
- 	 transition: transform 0.15s ease-in-out; 
+ 	 transition: transform 0.2s ease-in-out; 
     	 background-size: cover; background-position: center;
+        }
+.tile-new {
+    animation: pop 0.2s ease-out;
+}
+@keyframes pop {
+            0% { transform: scale(0.8); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
         }
         /* 숫자별 스타일 및 이미지 설정 구역 */
         .tile-2 { background-image: url('./images//img_2.jpg'); 
@@ -25,7 +33,6 @@
         .tile-4 {background-image: url('./images//img_4.jpg'); 
         background-color: #f59563;
         color: transparent;}
-
         .tile-8 { background-image: url('./images//img_8.jpg'); 
         background-color: #f2b179; /* 이미지가 안 뜰 때를 대비한 기본색 */
         color: transparent; /* 숫자 글자를 숨기고 싶을 때 추가 */}
@@ -81,11 +88,12 @@
                 row.forEach((num, c) => {
                     if (num !== 0) {
                         const tile = document.createElement('div');
-                        tile.className = `tile tile-${num}`;
-                        tile.style.top = `${r * 97.5 + 10}px`;
-                        tile.style.left = `${c * 97.5 + 10}px`;
-                        tile.innerText = num;
-                        container.appendChild(tile);
+tile.className = `tile tile-${num} tile-new`; 
+                
+                tile.style.top = `${r * 97.5 + 10}px`;
+                tile.style.left = `${c * 97.5 + 10}px`;
+                tile.innerText = num;
+                container.appendChild(tile);
                     }
                 });
             });
@@ -101,17 +109,24 @@
             }
         }
 
-        function slide(row) {
-            let arr = row.filter(val => val !== 0);
-            for (let i = 0; i < arr.length - 1; i++) {
-                if (arr[i] === arr[i + 1]) {
-                    arr[i] *= 2; score += arr[i];
-                    arr.splice(i + 1, 1);
-                }
-            }
-            while (arr.length < boardSize) arr.push(0);
-            return arr;
+let mergedTiles = [];
+
+function slide(row) {
+    let arr = row.filter(val => val !== 0);
+    for (let i = 0; i < arr.length - 1; i++) {
+        if (arr[i] === arr[i + 1]) {
+            arr[i] *= 2; 
+            score += arr[i];
+            
+            // ★ 합쳐진 인덱스 i를 기록 (이 타일은 팝 효과를 낼 거예요!)
+            mergedTiles.push({ row: currentRowIndex, col: i }); 
+            
+            arr.splice(i + 1, 1);
         }
+    }
+    while (arr.length < boardSize) arr.push(0);
+    return arr;
+}
 
         function rotateBoard() { // 시계방향 90도 회전
             let newBoard = board[0].map((val, index) => board.map(row => row[index]).reverse());
