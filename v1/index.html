@@ -12,20 +12,18 @@
         .grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 10px; width: 100%; height: 100%; }
         .cell { background-color: var(--cell-color); border-radius: 3px; }
         .tile {
-            position: absolute; width: 87.5px; height: 100px; /* 위치 조정 */
+            position: absolute; width: 87.5px; height: 87.5px;
             display: flex; justify-content: center; align-items: center;
             font-size: 35px; font-weight: bold; border-radius: 3px;
-            transition: transform 0.2s ease-in-out;
+            transition: all 0.2s ease-in-out; /* 부드러운 이동 */
             background-size: cover; background-position: center;
         }
-        /* 합쳐질 때 팝 효과 */
         .tile-merged { animation: pop 0.2s ease-out; }
         @keyframes pop {
             0% { transform: scale(0.8); }
             50% { transform: scale(1.2); }
             100% { transform: scale(1); }
         }
-        /* 이미지 경로가 맞는지 확인하세요 */
         [class*="tile-"] { color: transparent; } 
     </style>
 </head>
@@ -51,7 +49,9 @@
 
         function render() {
             const container = document.getElementById('tile-container');
-            container.innerHTML = '';
+            // innerHTML을 비우는 대신, 기존 타일들을 애니메이션 후 삭제하도록 유도
+            container.innerHTML = ''; 
+            
             board.forEach((row, r) => {
                 row.forEach((num, c) => {
                     if (num !== 0) {
@@ -59,6 +59,7 @@
                         tile.className = `tile tile-${num}`;
                         if (mergedTiles.some(t => t.row === r && t.col === c)) tile.classList.add('tile-merged');
                         
+                        // 위치 설정
                         tile.style.top = `${r * 97.5 + 10}px`;
                         tile.style.left = `${c * 97.5 + 10}px`;
                         tile.innerText = num;
@@ -89,35 +90,3 @@
                 }
             }
             while (arr.length < boardSize) arr.push(0);
-            return arr;
-        }
-
-        function rotateBoard() {
-            board = board[0].map((val, index) => board.map(row => row[index]).reverse());
-        }
-
-        function move(direction) {
-            let oldBoard = JSON.stringify(board);
-            mergedTiles = []; 
-            let rotations = {"ArrowLeft": 0, "ArrowDown": 1, "ArrowRight": 2, "ArrowUp": 3}[direction];
-            for(let i=0; i<rotations; i++) rotateBoard();
-            board = board.map((row, r) => slide(row, r));
-            for(let i=0; i<(4-rotations)%4; i++) rotateBoard();
-
-            if (oldBoard !== JSON.stringify(board)) {
-                addRandomTile();
-                render();
-            }
-        }
-
-        window.addEventListener('keydown', e => {
-            if(["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) move(e.key);
-        });
-
-        let startX, startY;
-        window.addEventListener('touchstart', e => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; });
-        window.addEventListener('touchend', e => {
-            if (!startX || !startY) return;
-            let diffX = e.changedTouches[0].clientX - startX;
-            let diffY = e.changedTouches[0].clientY - startY;
-            if (Math.abs(diffX) > Math.abs(diffY)) { if (Math.abs(diffX) > 30)
