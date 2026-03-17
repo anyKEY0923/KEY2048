@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -177,7 +178,7 @@ function createTile(value, r, c){
     el.className = "tile";
     el.style.width = cellSize + "px";
     el.style.height = cellSize + "px";
-    el.style.backgroundImage = url('./images/img_${value}.jpg');
+    el.style.backgroundImage = `url('./images/img_${value}.jpg')`;
     tileLayer.appendChild(el);
 
     const tile = {
@@ -200,7 +201,7 @@ function updateTile(tile){
     const p = pos(tile.r, tile.c);
     tile.el.style.top = p.top + "px";
     tile.el.style.left = p.left + "px";
-    tile.el.style.backgroundImage = url('./images/img_${tile.value}.jpg');
+    tile.el.style.backgroundImage = `url('./images/img_${tile.value}.jpg')`;
     
     if(tile.merged) {
         tile.el.classList.add("tile-merge");
@@ -341,7 +342,7 @@ function getMaxTile(){
 function showWin(){
     const overlay = document.getElementById("winoverlay");
     const img = document.getElementById("win-img");
-    img.style.backgroundImage = url('./images/img_2048.jpg');
+    img.style.backgroundImage = `url('./images/img_2048.jpg')`;
     overlay.style.display = "flex";
 }
 
@@ -349,7 +350,7 @@ function showGameOver(){
     const overlay = document.getElementById("gameover");
     const img = document.getElementById("gameover-img");
     const max = getMaxTile();
-    img.style.backgroundImage = url('./images/img_${max}.jpg');
+    img.style.backgroundImage = `url('./images/img_${max}.jpg')`;
     overlay.style.display = "flex";
 }
 
