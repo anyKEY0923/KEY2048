@@ -4,28 +4,94 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <style>
+:root{
+    --board-size:min(92vw,420px);
+    --bg:#faf8ef;
+    --board:#bbada0;
+    --panel:#8f7a66;
+    --panel-label:#eee4da;
+    --panel-value:#ffffff;
+    --text:#776e65;
+    --sub:#8a8178;
+}
 body{
     margin:0;
-    background:#faf8ef;
+    background:var(--bg);
     font-family:Arial, sans-serif;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    height:100vh;
+    min-height:100vh;
     touch-action:none;
+    color:var(--text);
 }
-h2{
-    margin-bottom:10px;
+#app{
+    width:var(--board-size);
+    display:flex;
+    flex-direction:column;
+    align-items:stretch;
+}
+.version-note{
+    font-size:12px;
+    color:#888;
+    margin-bottom:8px;
+    text-align:center;
+}
+.title-banner{
+    width:100%;
+    height:84px;
+    background-image:url('./images/img_title.jpg');
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    border-radius:12px;
+    margin-bottom:12px;
+    box-shadow:0 6px 18px rgba(0,0,0,.08);
+}
+.top-panel{
+    width:100%;
+    display:flex;
+    align-items:stretch;
+    justify-content:space-between;
+    gap:10px;
+    margin-bottom:12px;
+}
+.score-card{
+    flex:1;
+    background:linear-gradient(180deg, #9d8872 0%, #8f7a66 100%);
+    border-radius:12px;
+    padding:10px 14px;
+    box-sizing:border-box;
+    box-shadow:0 6px 14px rgba(0,0,0,.08);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    min-height:68px;
+}
+.score-label{
+    font-size:12px;
+    font-weight:bold;
+    color:var(--panel-label);
+    letter-spacing:.5px;
+    margin-bottom:4px;
+}
+.score-value{
+    font-size:28px;
+    line-height:1;
+    font-weight:bold;
+    color:var(--panel-value);
 }
 #board{
     position:relative;
-    width:min(92vw,420px);
-    height:min(92vw,420px);
-    background:#bbada0;
+    width:100%;
+    aspect-ratio:1 / 1;
+    background:var(--board);
     padding:10px;
-    border-radius:6px;
+    border-radius:12px;
     box-sizing:border-box;
+    box-shadow:0 10px 24px rgba(0,0,0,.08);
 }
 .grid{
     display:grid;
@@ -36,7 +102,7 @@ h2{
 }
 .cell{
     background:rgba(238,228,218,.35);
-    border-radius:3px;
+    border-radius:6px;
 }
 #tiles,
 #anim-layer{
@@ -50,7 +116,7 @@ h2{
     display:flex;
     align-items:center;
     justify-content:center;
-    border-radius:4px;
+    border-radius:6px;
     background-size:cover;
     background-position:center;
 }
@@ -95,19 +161,21 @@ h2{
     background:rgba(0,0,0,.65);
     color:white;
     z-index:100;
+    border-radius:12px;
 }
 .overlay-img{
     width:180px;
     height:180px;
     background-size:cover;
     background-position:center;
-    border-radius:8px;
+    border-radius:10px;
     margin-bottom:20px;
 }
 .overlay-title{
     margin-bottom:15px;
     font-size:22px;
     font-weight:bold;
+    letter-spacing:.5px;
 }
 .overlay-buttons{
     display:flex;
@@ -116,42 +184,68 @@ h2{
 .overlay button{
     padding:12px 26px;
     font-size:18px;
+    font-weight:bold;
     border:none;
-    border-radius:6px;
+    border-radius:8px;
     cursor:pointer;
+    background:#f6efe6;
+    color:#6b5c50;
+}
+.overlay button:active{
+    transform:scale(.98);
+}
+@media (max-width:420px){
+    .title-banner{
+        height:72px;
+    }
+    .score-value{
+        font-size:24px;
+    }
+    .score-card{
+        min-height:62px;
+    }
 }
 </style>
 </head>
 <body>
 
-<div style="font-size:12px; color:#888; margin-bottom:6px;">
-v1.9.1 수정 : 병합 타일 깜빡임 수정, 최종 렌더 후 타일 레이어 표시 순서로 변경
-</div>
+<div id="app">
+    <div class="version-note">
+        v2.0.0 수정 : 타이틀 배너 추가, 현재점수/최고기록 UI 카드형으로 개선
+    </div>
 
-<h2>
-Score <span id="score">0</span>
-&nbsp;&nbsp;
-Best <span id="best">0</span>
-</h2>
+    <div class="title-banner"></div>
 
-<div id="board">
-    <div class="grid" id="bg"></div>
-    <div id="tiles"></div>
-    <div id="anim-layer"></div>
-
-    <div id="winoverlay" class="overlay">
-        <div id="win-img" class="overlay-img"></div>
-        <div class="overlay-title">YOU WIN</div>
-        <div class="overlay-buttons">
-            <button onclick="restart()">REPLAY</button>
+    <div class="top-panel">
+        <div class="score-card">
+            <div class="score-label">현재점수</div>
+            <div class="score-value" id="score">0</div>
+        </div>
+        <div class="score-card">
+            <div class="score-label">최고기록</div>
+            <div class="score-value" id="best">0</div>
         </div>
     </div>
 
-    <div id="gameover" class="overlay">
-        <div id="gameover-img" class="overlay-img"></div>
-        <div class="overlay-title">GAME OVER</div>
-        <div class="overlay-buttons">
-            <button onclick="restart()">REPLAY</button>
+    <div id="board">
+        <div class="grid" id="bg"></div>
+        <div id="tiles"></div>
+        <div id="anim-layer"></div>
+
+        <div id="winoverlay" class="overlay">
+            <div id="win-img" class="overlay-img"></div>
+            <div class="overlay-title">YOU WIN</div>
+            <div class="overlay-buttons">
+                <button onclick="restart()">REPLAY</button>
+            </div>
+        </div>
+
+        <div id="gameover" class="overlay">
+            <div id="gameover-img" class="overlay-img"></div>
+            <div class="overlay-title">GAME OVER</div>
+            <div class="overlay-buttons">
+                <button onclick="restart()">REPLAY</button>
+            </div>
         </div>
     </div>
 </div>
@@ -232,8 +326,8 @@ function updateScore(){
     if(score > best){
         best = score;
         localStorage.setItem("bestScore", String(best));
-        bestEl.innerText = String(best);
     }
+    bestEl.innerText = String(best);
 }
 
 function renderBoard(){
@@ -460,7 +554,6 @@ function buildMoveResult(dir){
     }
 
     return {
-        oldBoard,
         newBoard,
         animations,
         mergeCells: mergedCellsOut,
