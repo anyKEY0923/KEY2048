@@ -71,6 +71,7 @@ h2{
 }
 .tile-merge{
     animation:merge .22s ease-out;
+    will-change:transform;
 }
 @keyframes popIn{
     from{ transform:scale(0); }
@@ -124,7 +125,7 @@ h2{
 <body>
 
 <div style="font-size:12px; color:#888; margin-bottom:6px;">
-v1.9.0 수정 : 숫자 보드 기반 안정성 유지 + 슬라이드/병합 애니메이션 복구
+v1.9.1 수정 : 병합 타일 깜빡임 수정, 최종 렌더 후 타일 레이어 표시 순서로 변경
 </div>
 
 <h2>
@@ -406,7 +407,7 @@ function buildMoveResult(dir){
 
             res.moves.forEach(m => {
                 const fromC = dir === "ArrowLeft" ? m.from : (SIZE - 1 - m.from);
-                const toC   = dir === "ArrowLeft" ? m.to   : (SIZE - 1 - m.to);
+                const toC = dir === "ArrowLeft" ? m.to : (SIZE - 1 - m.to);
 
                 animations.push({
                     fromR: r,
@@ -439,7 +440,7 @@ function buildMoveResult(dir){
 
             res.moves.forEach(m => {
                 const fromR = dir === "ArrowUp" ? m.from : (SIZE - 1 - m.from);
-                const toR   = dir === "ArrowUp" ? m.to   : (SIZE - 1 - m.to);
+                const toR = dir === "ArrowUp" ? m.to : (SIZE - 1 - m.to);
 
                 animations.push({
                     fromR,
@@ -512,7 +513,6 @@ function playMoveAnimation(animations, onDone){
 
     setTimeout(() => {
         animLayer.innerHTML = "";
-        tilesEl.style.visibility = "visible";
         onDone();
     }, MOVE_MS + 20);
 }
@@ -542,6 +542,7 @@ function move(dir){
 
         spawn();
         renderBoard();
+        tilesEl.style.visibility = "visible";
 
         setTimeout(() => {
             mergeCells = [];
