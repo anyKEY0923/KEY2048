@@ -55,7 +55,7 @@ z-index:2;
 }
 .tile-removing{
 z-index:0;
-opacity: 0; /* 합쳐져서 사라지는 타일은 투명하게 처리 */
+opacity: 0;
 }
 @keyframes merge{
 0%{transform:scale(1)}
@@ -105,7 +105,7 @@ cursor:pointer;
 <body>
 
 <div style="font-size:12px; color:#888; margin-bottom:6px;">
-v1.6.3 수정 : 이동 및 병합 로직 안정화 완료
+v1.6.4 수정 : Shift + W 치트키 복구 및 이동 로직 최적화
 </div>
 
 <h2>
@@ -203,12 +203,8 @@ function updateTile(tile){
     tile.el.style.left = p.left + "px";
     tile.el.style.backgroundImage = `url('./images/img_${tile.value}.jpg')`;
     
-    if(tile.merged) {
-        tile.el.classList.add("tile-merge");
-    }
-    if(tile.isRemoving) {
-        tile.el.classList.add("tile-removing");
-    }
+    if(tile.merged) tile.el.classList.add("tile-merge");
+    if(tile.isRemoving) tile.el.classList.add("tile-removing");
 }
 
 function rebuildBoard(){
@@ -241,8 +237,6 @@ function move(dir){
 
     moving = true;
     rebuildBoard();
-    
-    // 이동 전 모든 타일의 병합 상태 초기화
     tiles.forEach(t => t.merged = false);
 
     let moved = false;
@@ -254,9 +248,7 @@ function move(dir){
             let tile = board[r][c];
             if(!tile) continue;
 
-            let nr = r;
-            let nc = c;
-
+            let nr = r, nc = c;
             while(true){
                 let tr = nr, tc = nc;
                 if(dir === "ArrowLeft") tc--;
@@ -268,20 +260,17 @@ function move(dir){
 
                 let target = board[tr][tc];
                 if(!target){
-                    // 빈 공간으로 이동
                     board[nr][nc] = null;
                     nr = tr; nc = tc;
                     board[nr][nc] = tile;
                     moved = true;
                 } else if(target.value === tile.value && !target.merged && !tile.merged){
-                    // 병합 발생
                     board[nr][nc] = null;
                     target.value *= 2;
-                    target.merged = true; // 병합된 타일임을 표시
+                    target.merged = true;
                     score += target.value;
-                    
                     nr = tr; nc = tc;
-                    tile.isRemoving = true; // 이동해온 타일은 삭제 대기
+                    tile.isRemoving = true;
                     moved = true;
                     break;
                 } else break;
@@ -298,16 +287,13 @@ function move(dir){
             localStorage.setItem("bestScore", best);
             bestEl.innerText = best;
         }
-
         setTimeout(() => {
-            // 삭제 대기 타일 실제 제거 및 병합 플래그 청소
             tiles.filter(t => t.isRemoving).forEach(t => t.el.remove());
             tiles = tiles.filter(t => !t.isRemoving);
             tiles.forEach(t => {
                 t.merged = false;
                 t.el.classList.remove("tile-merge");
             });
-
             spawn();
             if(!wonShown && has2048Tile()){
                 showWin();
@@ -358,38 +344,8 @@ function restart(){
     location.reload();
 }
 
+// [수정포인트] Shift + W 치트키 로직 복구
 window.addEventListener("keydown", e => {
-    if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)){
-        e.preventDefault();
-        move(e.key);
-    }
-});
-
-let startX = 0, startY = 0;
-document.addEventListener("touchstart", e => {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-}, {passive:true});
-
-document.addEventListener("touchend", e => {
-    let dx = e.changedTouches[0].clientX - startX;
-    let dy = e.changedTouches[0].clientY - startY;
-    if(Math.max(Math.abs(dx), Math.abs(dy)) < 30) return;
-    if(Math.abs(dx) > Math.abs(dy)) move(dx > 0 ? "ArrowRight" : "ArrowLeft");
-    else move(dy > 0 ? "ArrowDown" : "ArrowUp");
-}, {passive:true});
-
-function init(){
-    calculateLayout();
-    window.addEventListener("resize", calculateLayout);
-    for(let i=0; i<16; i++){
-        let d = document.createElement("div");
-        d.className = "cell";
-        bg.appendChild(d);
-    }
-    spawn(); spawn();
-}
-init();
-</script>
-</body>
-</html>
+    if(e.shiftKey && e.key.toLowerCase() === "w"){
+        showWin();
+        won
