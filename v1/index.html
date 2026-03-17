@@ -323,11 +323,13 @@ bestEl.innerText=best
 
 if(moved){
 
+setTimeout(()=>{
+
 spawn()
 
-setTimeout(()=>{
 if(isGameOver()) showGameOver()
-},10)
+
+},160)
 
 }
 
