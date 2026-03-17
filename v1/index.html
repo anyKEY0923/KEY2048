@@ -105,7 +105,7 @@ h2{
 <body>
 
 <div style="font-size:12px; color:#888; margin-bottom:6px;">
-v1.6.4 수정 : WIN 테스트 단축키(SHIFT + W), ESC 닫기, 상태 처리 안정화
+v1.7.0 수정 : 라인 기반 이동 로직으로 전면 교체, SHIFT+W WIN 테스트 추가
 </div>
 
 <h2>
@@ -203,6 +203,8 @@ function createTile(value, r, c){
     requestAnimationFrame(() => {
         el.style.transform = "scale(1)";
     });
+
+    return tile;
 }
 
 function updateTile(tile){
@@ -211,11 +213,8 @@ function updateTile(tile){
     tile.el.style.left = p.left + "px";
     tile.el.style.backgroundImage = `url('./images/img_${tile.value}.jpg')`;
 
-    if(tile.merged) tile.el.classList.add("tile-merge");
-    else tile.el.classList.remove("tile-merge");
-
-    if(tile.isRemoving) tile.el.classList.add("tile-removing");
-    else tile.el.classList.remove("tile-removing");
+    tile.el.classList.toggle("tile-merge", !!tile.merged);
+    tile.el.classList.toggle("tile-removing", !!tile.isRemoving);
 }
 
 function rebuildBoard(){
@@ -280,9 +279,11 @@ function updateScore(){
     }
 }
 
-function resetMergeFlags(){
+function clearTileFlags(){
     tiles.forEach(tile => {
         tile.merged = false;
+        tile.isRemoving = false;
+        tile.el.classList.remove("tile-merge", "tile-removing");
     });
 }
 
@@ -297,66 +298,105 @@ function cleanupAfterMove(){
     });
 }
 
+function getLine(index, dir){
+    const line = [];
+    if(dir === "ArrowLeft" || dir === "ArrowRight"){
+        for(let c = 0; c < SIZE; c++){
+            line.push(board[index][c]);
+        }
+        if(dir === "ArrowRight") line.reverse();
+    }else{
+        for(let r = 0; r < SIZE; r++){
+            line.push(board[r][index]);
+        }
+        if(dir === "ArrowDown") line.reverse();
+    }
+    return line;
+}
+
+function setLine(index, dir, line){
+    const arr = [...line];
+    if(dir === "ArrowRight" || dir === "ArrowDown") arr.reverse();
+
+    if(dir === "ArrowLeft" || dir === "ArrowRight"){
+        for(let c = 0; c < SIZE; c++){
+            board[index][c] = arr[c];
+            if(arr[c]){
+                arr[c].r = index;
+                arr[c].c = c;
+            }
+        }
+    }else{
+        for(let r = 0; r < SIZE; r++){
+            board[r][index] = arr[r];
+            if(arr[r]){
+                arr[r].r = r;
+                arr[r].c = index;
+            }
+        }
+    }
+}
+
+function processLine(line){
+    const originalIds = line.map(tile => tile ? tile.id : null);
+
+    const compact = line.filter(tile => tile !== null);
+    const result = [];
+    let changed = false;
+
+    for(let i = 0; i < compact.length; i++){
+        const current = compact[i];
+        const next = compact[i + 1];
+
+        if(next && current.value === next.value){
+            next.isRemoving = true;
+            current.value *= 2;
+            current.merged = true;
+            score += current.value;
+
+            result.push(current);
+            i++;
+            changed = true;
+        }else{
+            result.push(current);
+        }
+    }
+
+    while(result.length < SIZE){
+        result.push(null);
+    }
+
+    const resultIds = result.map(tile => tile ? tile.id : null);
+
+    if(!changed){
+        for(let i = 0; i < SIZE; i++){
+            if(originalIds[i] !== resultIds[i]){
+                changed = true;
+                break;
+            }
+        }
+    }
+
+    return { line: result, changed };
+}
+
 function move(dir){
     if(moving) return;
     if(gameOverOverlay.style.display === "flex") return;
     if(winOverlay.style.display === "flex") return;
 
     moving = true;
+    hideOverlays();
     rebuildBoard();
-    resetMergeFlags();
+    clearTileFlags();
 
     let moved = false;
 
-    const rowOrder = (dir === "ArrowDown") ? [3, 2, 1, 0] : [0, 1, 2, 3];
-    const colOrder = (dir === "ArrowRight") ? [3, 2, 1, 0] : [0, 1, 2, 3];
-
-    for(const r of rowOrder){
-        for(const c of colOrder){
-            const tile = board[r][c];
-            if(!tile) continue;
-
-            let nr = r;
-            let nc = c;
-
-            while(true){
-                let tr = nr;
-                let tc = nc;
-
-                if(dir === "ArrowLeft") tc--;
-                else if(dir === "ArrowRight") tc++;
-                else if(dir === "ArrowUp") tr--;
-                else if(dir === "ArrowDown") tr++;
-
-                if(tr < 0 || tr >= SIZE || tc < 0 || tc >= SIZE) break;
-
-                const target = board[tr][tc];
-
-                if(!target){
-                    board[nr][nc] = null;
-                    nr = tr;
-                    nc = tc;
-                    board[nr][nc] = tile;
-                    moved = true;
-                }else if(target.value === tile.value && !target.merged && !tile.merged){
-                    board[nr][nc] = null;
-                    target.value *= 2;
-                    target.merged = true;
-                    score += target.value;
-
-                    nr = tr;
-                    nc = tc;
-                    tile.isRemoving = true;
-                    moved = true;
-                    break;
-                }else{
-                    break;
-                }
-            }
-
-            tile.r = nr;
-            tile.c = nc;
-        }
+    for(let i = 0; i < SIZE; i++){
+        const line = getLine(i, dir);
+        const processed = processLine(line);
+        setLine(i, dir, processed.line);
+        if(processed.changed) moved = true;
     }
 
     if(!moved){
@@ -364,19 +404,20 @@ function move(dir){
         return;
     }
 
-    tiles.forEach(updateTile);
+    tiles.forEach(tile => {
+        if(tile) updateTile(tile);
+    });
     updateScore();
 
     setTimeout(() => {
         cleanupAfterMove();
+        rebuildBoard();
         spawn();
 
         if(!wonShown && has2048Tile()){
             wonShown = true;
             showWin();
-        }
-
-        if(isGameOver()){
+        }else if(isGameOver()){
             showGameOver();
         }
 
@@ -390,6 +431,7 @@ function isGameOver(){
     for(let r = 0; r < SIZE; r++){
         for(let c = 0; c < SIZE; c++){
             if(!board[r][c]) return false;
+
             if(c < SIZE - 1 && board[r][c].value === board[r][c + 1].value) return false;
             if(r < SIZE - 1 && board[r][c].value === board[r + 1][c].value) return false;
         }
@@ -410,7 +452,7 @@ function restart(){
     wonShown = false;
 
     scoreEl.innerText = "0";
-    bestEl.innerText = best;
+    bestEl.innerText = String(best);
 
     spawn();
     spawn();
@@ -432,7 +474,7 @@ window.addEventListener("keydown", e => {
         return;
     }
 
-    if(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)){
+    if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)){
         e.preventDefault();
         move(e.key);
     }
@@ -444,7 +486,7 @@ let startY = 0;
 document.addEventListener("touchstart", e => {
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
-}, { passive: true });
+}, { passive:true });
 
 document.addEventListener("touchend", e => {
     const dx = e.changedTouches[0].clientX - startX;
@@ -457,7 +499,7 @@ document.addEventListener("touchend", e => {
     }else{
         move(dy > 0 ? "ArrowDown" : "ArrowUp");
     }
-}, { passive: true });
+}, { passive:true });
 
 function init(){
     calculateLayout();
