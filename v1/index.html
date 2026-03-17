@@ -58,7 +58,7 @@ z-index:1;
 }
 
 .tile-merge{
-animation:merge .18s;
+animation:merge .24s ease-out;
 z-index:2;
 }
 
@@ -68,7 +68,7 @@ z-index:0;
 
 @keyframes merge{
 0%{transform:scale(1)}
-50%{transform:scale(1.2)}
+45%{transform:scale(1.24)}
 100%{transform:scale(1)}
 }
 
@@ -110,7 +110,7 @@ cursor:pointer;
 <body>
 
 <div style="font-size:12px; color:#888; margin-bottom:6px;">
-v1.5 수정 : merge 후 타일 생성 시 발생하던 미세 랙 제거 (DOM 삭제/생성 프레임 분리 + requestAnimationFrame 적용)
+v1.5.1 수정 : merge 스케일 애니메이션 체감 강화 (애니메이션 시간 소폭 증가 + 최대 스케일 확대, 로직 변경 없음)
 </div>
 
 <h2>
@@ -205,7 +205,6 @@ function createTile(value,r,c){
     tiles.push(tile)
     updateTile(tile)
 
-    // pop 느낌
     el.style.transform="scale(0.85)"
     requestAnimationFrame(()=>{
         el.style.transform="scale(1)"
@@ -332,11 +331,9 @@ if(moved){
 
 setTimeout(()=>{
 
-// 삭제 먼저
 tiles.filter(t=>t.isRemoving).forEach(t=>t.el.remove())
 tiles=tiles.filter(t=>!t.isRemoving)
 
-// 다음 프레임 → 다음 프레임 → spawn
 requestAnimationFrame(()=>{
 requestAnimationFrame(()=>{
 spawn()
@@ -348,7 +345,9 @@ if(isGameOver()) showGameOver()
 
 }
 
-setTimeout(()=>moving=false,160)
+setTimeout(()=>{
+moving=false
+},160)
 
 }
 
