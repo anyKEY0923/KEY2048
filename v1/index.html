@@ -24,7 +24,13 @@
     --sub:#7a7398;
 
     --gap:10px;
-    --pad:10px;
+
+    /* 보드 패딩: 상단만 2px 더 */
+    --pad-x:10px;
+    --pad-top:12px;
+    --pad-bottom:10px;
+
+    --tile-radius:8px;
 }
 *{
     box-sizing:border-box;
@@ -76,14 +82,14 @@ body{
     margin-bottom:14px;
     padding:10px 14px;
     border-radius:12px;
-    background:rgba(255,255,255,.32);
+    background:rgba(255,255,255,.48);
     backdrop-filter:blur(4px);
     box-shadow:
-        0 6px 16px rgba(70,60,120,.06),
-        inset 0 1px 0 rgba(255,255,255,.45);
+        0 6px 16px rgba(70,60,120,.04),
+        inset 0 1px 0 rgba(255,255,255,.55);
     font-size:13px;
     line-height:1.5;
-    color:var(--sub);
+    color:#7f7997;
     text-align:center;
 }
 .top-panel{
@@ -145,7 +151,7 @@ body{
     box-sizing:border-box;
     background:
         linear-gradient(180deg, #dcd5f0 0%, var(--board) 50%, var(--board-dark) 100%);
-    padding:var(--pad);
+    padding:0;
     border-radius:20px;
     box-shadow:
         0 16px 30px rgba(70,60,120,.15),
@@ -166,10 +172,10 @@ body{
 }
 .grid{
     position:absolute;
-    top:var(--pad);
-    left:var(--pad);
-    right:var(--pad);
-    bottom:var(--pad);
+    top:var(--pad-top);
+    left:var(--pad-x);
+    right:var(--pad-x);
+    bottom:var(--pad-bottom);
     z-index:1;
     display:grid;
     grid-template-columns:repeat(4,1fr);
@@ -177,17 +183,17 @@ body{
     gap:var(--gap);
 }
 .cell{
-    background:rgba(255,255,255,.35);
-    border-radius:8px;
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.28);
+    background:rgba(238,239,245,.42);
+    border-radius:var(--tile-radius);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.22);
 }
 #tiles,
 #anim-layer{
     position:absolute;
-    top:var(--pad);
-    left:var(--pad);
-    right:var(--pad);
-    bottom:var(--pad);
+    top:var(--pad-top);
+    left:var(--pad-x);
+    right:var(--pad-x);
+    bottom:var(--pad-bottom);
     pointer-events:none;
     z-index:2;
     overflow:hidden;
@@ -199,7 +205,7 @@ body{
     display:flex;
     align-items:center;
     justify-content:center;
-    border-radius:8px;
+    border-radius:var(--tile-radius);
     background-size:cover;
     background-position:center;
     background-repeat:no-repeat;
@@ -222,6 +228,25 @@ body{
 .tile-merge{
     animation:merge .22s ease-out;
     will-change:transform;
+}
+.tile-num{
+    position:absolute;
+    right:6px;
+    bottom:6px;
+    min-width:22px;
+    padding:2px 6px;
+    border-radius:999px;
+    background:rgba(255,255,255,.72);
+    color:#5f5978;
+    font-size:11px;
+    line-height:1.1;
+    font-weight:700;
+    text-align:center;
+    box-shadow:
+        0 1px 3px rgba(0,0,0,.12),
+        inset 0 1px 0 rgba(255,255,255,.5);
+    backdrop-filter:blur(2px);
+    pointer-events:none;
 }
 @keyframes popIn{
     from{ transform:scale(0); }
@@ -300,6 +325,13 @@ body{
     .overlay{
         border-radius:18px;
     }
+    .tile-num{
+        right:5px;
+        bottom:5px;
+        min-width:20px;
+        padding:2px 5px;
+        font-size:10px;
+    }
 }
 </style>
 </head>
@@ -307,7 +339,7 @@ body{
 
 <div id="app">
     <div class="version-note">
-        v2.3.1 수정 : 톤다운 연보라 적용 + 배경 그리드 복구
+        v2.4.0 수정 : 설명문 배경 조정, 보드 상단 여백 +2px, 빈 칸 그레이톤 조정, 타일 숫자 배지 추가
     </div>
 
     <div class="title-banner"></div>
@@ -435,6 +467,13 @@ function updateScore(){
     bestEl.innerText = String(best);
 }
 
+function appendTileNumberBadge(el, value){
+    const badge = document.createElement("div");
+    badge.className = "tile-num";
+    badge.textContent = value;
+    el.appendChild(badge);
+}
+
 function renderBoard(){
     if(!cellWidth || !cellHeight) return;
 
@@ -463,6 +502,7 @@ function renderBoard(){
                 tile.classList.add("tile-merge");
             }
 
+            appendTileNumberBadge(tile, value);
             tilesEl.appendChild(tile);
         }
     }
@@ -678,6 +718,7 @@ function createAnimTile(value, r, c){
     el.style.left = p.left + "px";
     el.style.backgroundImage = `url('./images/img_${value}.jpg')`;
 
+    appendTileNumberBadge(el, value);
     animLayer.appendChild(el);
     return el;
 }
