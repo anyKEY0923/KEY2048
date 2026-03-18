@@ -144,6 +144,98 @@ body{
     z-index:1;
     text-shadow:0 2px 5px rgba(74, 60, 112, .14);
 }
+
+/* 추가: 점수 상승 연출 */
+.score-gain{
+    position:absolute;
+    top:10px;
+    right:12px;
+    font-size:16px;
+    font-weight:700;
+    color:rgba(255,255,255,.96);
+    text-shadow:0 2px 6px rgba(74,60,112,.20);
+    pointer-events:none;
+    animation:scoreFloat .65s ease forwards;
+    z-index:4;
+}
+@keyframes scoreFloat{
+    0%{
+        opacity:0;
+        transform:translateY(6px) scale(.92);
+    }
+    18%{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+    100%{
+        opacity:0;
+        transform:translateY(-18px) scale(1.04);
+    }
+}
+
+/* 추가: 최고기록 갱신 연출 */
+.best-burst{
+    animation:bestPulse .7s ease;
+}
+.best-tag{
+    position:absolute;
+    top:10px;
+    right:10px;
+    padding:4px 8px;
+    border-radius:999px;
+    background:rgba(255,255,255,.92);
+    color:#7b6aa8;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.4px;
+    box-shadow:0 4px 10px rgba(74,60,112,.12);
+    animation:bestTagPop .9s ease forwards;
+    pointer-events:none;
+    z-index:4;
+}
+@keyframes bestPulse{
+    0%{ transform:scale(1); }
+    35%{ transform:scale(1.06); }
+    100%{ transform:scale(1); }
+}
+@keyframes bestTagPop{
+    0%{
+        opacity:0;
+        transform:translateY(4px) scale(.92);
+    }
+    20%{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+    100%{
+        opacity:0;
+        transform:translateY(-10px) scale(1);
+    }
+}
+
+/* 추가: 상시 새 게임 버튼 */
+.controls{
+    display:flex;
+    justify-content:flex-end;
+    margin:-2px 0 12px;
+}
+.ghost-btn{
+    border:none;
+    border-radius:12px;
+    padding:10px 14px;
+    font-size:13px;
+    font-weight:700;
+    color:#6c628e;
+    background:rgba(255,255,255,.68);
+    box-shadow:
+        0 6px 14px rgba(70,60,120,.06),
+        inset 0 1px 0 rgba(255,255,255,.7);
+    cursor:pointer;
+}
+.ghost-btn:active{
+    transform:scale(.98);
+}
+
 #board{
     position:relative;
     width:100%;
@@ -280,10 +372,24 @@ body{
     box-shadow:0 10px 22px rgba(44,34,73,.24);
 }
 .overlay-title{
-    margin-bottom:15px;
+    margin-bottom:10px;
     font-size:22px;
     font-weight:bold;
     letter-spacing:.6px;
+}
+.overlay-msg{
+    margin-bottom:18px;
+    font-size:14px;
+    line-height:1.45;
+    color:rgba(255,255,255,.88);
+    text-align:center;
+    padding:0 20px;
+}
+.overlay-sub{
+    margin:-6px 0 14px;
+    font-size:14px;
+    color:rgba(255,255,255,.92);
+    letter-spacing:.2px;
 }
 .overlay-buttons{
     display:flex;
@@ -332,6 +438,10 @@ body{
         padding:2px 5px;
         font-size:10px;
     }
+    .overlay-msg,
+    .overlay-sub{
+        font-size:13px;
+    }
 }
 </style>
 </head>
@@ -339,7 +449,7 @@ body{
 
 <div id="app">
     <div class="version-note">
-        v2.4.1 수정 : 바탕색/설명문 배경을 더 맑게 조정, 보드 상단 그라데이션 완화
+        v2.5.0 수정 : 엔딩 정보 강화, 점수/최고기록 연출 추가, 상시 새 게임 버튼 추가
     </div>
 
     <div class="title-banner"></div>
@@ -349,14 +459,18 @@ body{
     </div>
 
     <div class="top-panel">
-        <div class="score-card">
+        <div class="score-card" id="score-card">
             <div class="score-label">현재점수</div>
             <div class="score-value" id="score">0</div>
         </div>
-        <div class="score-card">
+        <div class="score-card" id="best-card">
             <div class="score-label">최고기록</div>
             <div class="score-value" id="best">0</div>
         </div>
+    </div>
+
+    <div class="controls">
+        <button class="ghost-btn" onclick="restart()">새 게임</button>
     </div>
 
     <div id="board">
@@ -366,7 +480,9 @@ body{
 
         <div id="winoverlay" class="overlay">
             <div id="win-img" class="overlay-img"></div>
-            <div class="overlay-title">YOU WIN</div>
+            <div class="overlay-title">축하해요!</div>
+            <div class="overlay-msg">2048 타일을 완성했어요 ✨</div>
+            <div id="win-tile-label" class="overlay-sub"></div>
             <div class="overlay-buttons">
                 <button onclick="restart()">REPLAY</button>
             </div>
@@ -374,7 +490,9 @@ body{
 
         <div id="gameover" class="overlay">
             <div id="gameover-img" class="overlay-img"></div>
-            <div class="overlay-title">GAME OVER</div>
+            <div class="overlay-title">여기까지도 훌륭해요</div>
+            <div id="gameover-msg" class="overlay-msg">다음 판엔 더 큰 타일을 노려봐요</div>
+            <div id="gameover-tile-label" class="overlay-sub"></div>
             <div class="overlay-buttons">
                 <button onclick="restart()">REPLAY</button>
             </div>
@@ -383,6 +501,15 @@ body{
 </div>
 
 <script>
+/*
+v2.5.0 수정점
+1) 엔딩 오버레이에 최고 타일 숫자 표시 추가
+2) 승리/패배 메시지를 더 부드럽고 기분 좋게 개선
+3) 점수 상승 시 +점수 플로팅 연출 추가
+4) 최고기록 갱신 시 NEW BEST 연출 추가
+5) 플레이 중에도 누를 수 있는 상시 새 게임 버튼 추가
+*/
+
 const SIZE = 4;
 const GAP = 10;
 const MOVE_MS = 140;
@@ -408,6 +535,11 @@ const winOverlay = document.getElementById("winoverlay");
 const gameOverOverlay = document.getElementById("gameover");
 const winImg = document.getElementById("win-img");
 const gameOverImg = document.getElementById("gameover-img");
+const winTileLabel = document.getElementById("win-tile-label");
+const gameOverTileLabel = document.getElementById("gameover-tile-label");
+const gameOverMsg = document.getElementById("gameover-msg");
+const scoreCardEl = document.getElementById("score-card");
+const bestCardEl = document.getElementById("best-card");
 
 bestEl.innerText = String(best);
 
@@ -438,13 +570,21 @@ function hideOverlays(){
 }
 
 function showWin(){
+    const max = getMaxTile() || 2048;
     winImg.style.backgroundImage = "url('./images/img_2048.jpg')";
+    winTileLabel.textContent = `최고 타일 ${max}`;
     winOverlay.style.display = "flex";
 }
 
 function showGameOver(){
     const max = getMaxTile() || 2;
     gameOverImg.style.backgroundImage = `url('./images/img_${max}.jpg')`;
+    gameOverTileLabel.textContent = `이번 판 최고 타일 ${max}`;
+
+    gameOverMsg.textContent = max >= 1024
+        ? "거의 다 왔어요. 다음 판엔 2048까지!"
+        : "다음 판엔 더 큰 타일을 노려봐요";
+
     gameOverOverlay.style.display = "flex";
 }
 
@@ -458,11 +598,49 @@ function getMaxTile(){
     return max;
 }
 
+function celebrateBest(){
+    bestCardEl.classList.remove("best-burst");
+    void bestCardEl.offsetWidth;
+    bestCardEl.classList.add("best-burst");
+
+    const oldTag = bestCardEl.querySelector(".best-tag");
+    if(oldTag) oldTag.remove();
+
+    const tag = document.createElement("div");
+    tag.className = "best-tag";
+    tag.textContent = "NEW BEST!";
+    bestCardEl.appendChild(tag);
+
+    setTimeout(() => {
+        bestCardEl.classList.remove("best-burst");
+        tag.remove();
+    }, 900);
+}
+
+function showScoreGain(amount){
+    if(!amount) return;
+
+    const el = document.createElement("div");
+    el.className = "score-gain";
+    el.textContent = `+${amount}`;
+    scoreCardEl.appendChild(el);
+
+    setTimeout(() => {
+        el.remove();
+    }, 700);
+}
+
 function updateScore(){
     scoreEl.innerText = String(score);
+
+    const prevBest = best;
     if(score > best){
         best = score;
         localStorage.setItem("bestScore", String(best));
+
+        if(best > prevBest){
+            celebrateBest();
+        }
     }
     bestEl.innerText = String(best);
 }
@@ -774,6 +952,7 @@ function move(dir){
 
     score += res.gained;
     updateScore();
+    showScoreGain(res.gained);
 
     playMoveAnimation(res.animations, () => {
         board = res.newBoard;
