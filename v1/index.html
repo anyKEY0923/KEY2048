@@ -446,11 +446,13 @@ body{
 }
 .overlay-img{
     width:180px;
-    height:180px;
-    background-size:cover;
+    aspect-ratio:1 / 1;
+    background-size:contain;
     background-position:center;
+    background-repeat:no-repeat;
+    background-color:rgba(255,255,255,.10);
     border-radius:12px;
-    margin-bottom:20px;
+    margin-bottom:18px;
     box-shadow:0 10px 22px rgba(44,34,73,.24);
 }
 .overlay-title{
@@ -460,7 +462,7 @@ body{
     letter-spacing:.6px;
 }
 .overlay-msg{
-    margin-bottom:14px;
+    margin:0 0 14px;
     font-size:14px;
     line-height:1.45;
     color:rgba(255,255,255,.88);
@@ -602,7 +604,7 @@ body{
 
 <div id="app">
     <div class="version-note">
-        v2.5.6 수정 : 디버그 모드(Shift+D / Shift+W / Shift+G) 추가
+        v2.5.7 수정 : 패배 엔딩 단순화 / 정사각형 이미지 / 디버그 모드 유지
     </div>
 
     <div id="loading-note" class="loading-note">이미지 로딩 중...</div>
@@ -662,20 +664,8 @@ body{
 
         <div id="gameover" class="overlay">
             <div id="gameover-img" class="overlay-img"></div>
-            <div class="overlay-title">여기까지도 훌륭해요</div>
-            <div id="gameover-msg" class="overlay-msg">다음 판엔 더 큰 타일을 노려봐요</div>
+            <div id="gameover-msg" class="overlay-msg">거의 다 왔어요. 다음 번엔 2048까지!</div>
             <div id="gameover-tile-label" class="overlay-sub"></div>
-
-            <div class="overlay-stats">
-                <div class="overlay-stat">
-                    <span class="overlay-stat-label">이번 점수</span>
-                    <span class="overlay-stat-value" id="gameover-score-value">0</span>
-                </div>
-                <div class="overlay-stat">
-                    <span class="overlay-stat-label">최고 타일</span>
-                    <span class="overlay-stat-value" id="gameover-max-value">0</span>
-                </div>
-            </div>
 
             <div id="gameover-badge" class="overlay-badge is-hidden"></div>
 
@@ -689,11 +679,11 @@ body{
 
 <script>
 /*
-v2.5.6 수정점
-1) Shift + D : 디버그 모드 ON/OFF
-2) Shift + W : 승리 엔딩 강제 보기
-3) Shift + G : 게임오버 엔딩 강제 보기
-4) 디버그 모드 배지 표시
+v2.5.7 수정점
+1) 패배 엔딩 제목 제거, 메시지 한 줄만 사용
+2) 패배 엔딩의 점수/최고타일 카드 제거
+3) 엔딩 이미지 contain 처리로 정사각형 형태 온전하게 표시
+4) 디버그 모드 유지
 */
 
 const SIZE = 4;
@@ -756,8 +746,6 @@ const winMsg = document.getElementById("win-msg");
 const gameOverMsg = document.getElementById("gameover-msg");
 const winScoreValue = document.getElementById("win-score-value");
 const winMaxValue = document.getElementById("win-max-value");
-const gameOverScoreValue = document.getElementById("gameover-score-value");
-const gameOverMaxValue = document.getElementById("gameover-max-value");
 const winBadge = document.getElementById("win-badge");
 const gameOverBadge = document.getElementById("gameover-badge");
 const scoreCardEl = document.getElementById("score-card");
@@ -876,10 +864,8 @@ function showGameOver(){
     const safeImgValue = PRELOAD_IMAGES.includes(`./images/img_${max}.jpg`) ? max : 2;
 
     gameOverImg.style.backgroundImage = `url('./images/img_${safeImgValue}.jpg')`;
-    gameOverTileLabel.textContent = `이번 판 최고 타일 ${max}`;
     gameOverMsg.textContent = getGameOverMessageByMax(max);
-    gameOverScoreValue.textContent = score;
-    gameOverMaxValue.textContent = max;
+    gameOverTileLabel.textContent = `이번 판 최고 타일 ${max}`;
     setBadge(gameOverBadge, getGameOverBadgeText(max));
     gameOverOverlay.style.display = "flex";
 }
