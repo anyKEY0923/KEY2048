@@ -84,6 +84,26 @@ body{
     display:block;
 }
 
+/* 디버그 배지 */
+.debug-indicator{
+    display:none;
+    margin-bottom:8px;
+    padding:7px 10px;
+    border-radius:999px;
+    background:rgba(255,255,255,.82);
+    color:#7a5fc2;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.3px;
+    text-align:center;
+    box-shadow:
+        0 6px 14px rgba(70,60,120,.08),
+        inset 0 1px 0 rgba(255,255,255,.7);
+}
+.debug-indicator.show{
+    display:block;
+}
+
 /* 달성 배너 */
 .milestone-wrap{
     position:absolute;
@@ -453,8 +473,6 @@ body{
     color:rgba(255,255,255,.92);
     letter-spacing:.2px;
 }
-
-/* 결과 화면 강화 */
 .overlay-stats{
     width:min(280px, 100%);
     display:grid;
@@ -584,10 +602,11 @@ body{
 
 <div id="app">
     <div class="version-note">
-        v2.5.5 수정 : 결과 화면 강화(점수/최고타일/상태배지/결과복사) 추가
+        v2.5.6 수정 : 디버그 모드(Shift+D / Shift+W / Shift+G) 추가
     </div>
 
     <div id="loading-note" class="loading-note">이미지 로딩 중...</div>
+    <div id="debug-indicator" class="debug-indicator">DEBUG MODE ON · Shift+W 승리 / Shift+G 게임오버</div>
     <div id="milestone-wrap" class="milestone-wrap"></div>
 
     <div class="title-banner"></div>
@@ -670,12 +689,11 @@ body{
 
 <script>
 /*
-v2.5.5 수정점
-1) 승리/패배 오버레이에 결과 요약 카드 추가
-2) 이번 점수 / 최고 타일 표시
-3) 상태 배지(NEW BEST / 최고기록까지 n점 / 첫 1024 달성 등) 추가
-4) 결과 복사 버튼 추가
-5) preload / 모바일 확대 방지 / 시작 2,2 고정 / 달성 배너 유지
+v2.5.6 수정점
+1) Shift + D : 디버그 모드 ON/OFF
+2) Shift + W : 승리 엔딩 강제 보기
+3) Shift + G : 게임오버 엔딩 강제 보기
+4) 디버그 모드 배지 표시
 */
 
 const SIZE = 4;
@@ -704,6 +722,7 @@ let score = 0;
 let best = Number(localStorage.getItem("bestScore") || 0);
 let wonShown = false;
 let moving = false;
+let debugMode = false;
 
 let cellWidth = 0;
 let cellHeight = 0;
@@ -719,6 +738,7 @@ let achievedMilestones = new Set();
 let bestJustUpdated = false;
 
 const loadingNoteEl = document.getElementById("loading-note");
+const debugIndicatorEl = document.getElementById("debug-indicator");
 const milestoneWrapEl = document.getElementById("milestone-wrap");
 const boardEl = document.getElementById("board");
 const tilesEl = document.getElementById("tiles");
@@ -744,6 +764,27 @@ const scoreCardEl = document.getElementById("score-card");
 const bestCardEl = document.getElementById("best-card");
 
 bestEl.innerText = String(best);
+
+function updateDebugIndicator(){
+    debugIndicatorEl.classList.toggle("show", debugMode);
+}
+
+function toggleDebugMode(){
+    debugMode = !debugMode;
+    updateDebugIndicator();
+    showMilestone(debugMode ? "디버그 모드 ON" : "디버그 모드 OFF");
+}
+
+function forceWinOverlay(){
+    hideOverlays();
+    wonShown = true;
+    showWin();
+}
+
+function forceGameOverOverlay(){
+    hideOverlays();
+    showGameOver();
+}
 
 function preloadImages(srcList){
     loadingNoteEl.classList.add("show");
@@ -798,16 +839,8 @@ function setBadge(el, text){
     }
 }
 
-function getHighestMilestoneReached(){
-    let highest = 0;
-    MILESTONE_VALUES.forEach(v => {
-        if(achievedMilestones.has(v) && v > highest) highest = v;
-    });
-    return highest;
-}
-
 function getGameOverMessageByMax(max){
-    if(max >= 1024) return "거의 다 왔어요. 다음 판엔 2048까지!";
+    if(max >= 1024) return "거의 다 왔어요. 다음 번엔 2048까지!";
     if(max >= 512) return "좋아요! 다음 판엔 더 크게 갈 수 있어요.";
     if(max >= 256) return "흐름이 좋아요. 다음 판이 더 기대돼요.";
     return "조금만 더 익숙해지면 금방 올라가요.";
@@ -822,15 +855,13 @@ function getWinBadgeText(max){
 
 function getGameOverBadgeText(max){
     if(bestJustUpdated) return "NEW BEST!";
-    const diff = Math.max(best - score, 0);
-    if(diff > 0) return `최고기록까지 ${diff}점`;
     if(max >= 1024) return "첫 1024 달성!";
     if(max >= 512) return "512 달성!";
     return "";
 }
 
 function showWin(){
-    const max = getMaxTile() || 2048;
+    const max = Math.max(getMaxTile(), 2048);
     winImg.style.backgroundImage = "url('./images/img_2048.jpg')";
     winMsg.textContent = "2048 타일을 완성했어요 ✨";
     winTileLabel.textContent = `최고 타일 ${max}`;
@@ -842,7 +873,9 @@ function showWin(){
 
 function showGameOver(){
     const max = getMaxTile() || 2;
-    gameOverImg.style.backgroundImage = `url('./images/img_${max}.jpg')`;
+    const safeImgValue = PRELOAD_IMAGES.includes(`./images/img_${max}.jpg`) ? max : 2;
+
+    gameOverImg.style.backgroundImage = `url('./images/img_${safeImgValue}.jpg')`;
     gameOverTileLabel.textContent = `이번 판 최고 타일 ${max}`;
     gameOverMsg.textContent = getGameOverMessageByMax(max);
     gameOverScoreValue.textContent = score;
@@ -900,7 +933,7 @@ function getMilestoneMessage(value){
         case 512: return "🔥 512 달성!";
         case 1024: return "💫 1024까지 왔어요!";
         case 2048: return "🎉 2048 완성!";
-        default: return `✨ ${value} 달성!`;
+        default: return String(value);
     }
 }
 
@@ -1334,12 +1367,24 @@ function restart(){
 }
 
 window.addEventListener("keydown", e => {
+    if(e.shiftKey && (e.key === "D" || e.key === "d")){
+        e.preventDefault();
+        toggleDebugMode();
+        return;
+    }
+
     if(e.shiftKey && (e.key === "W" || e.key === "w")){
         e.preventDefault();
-        if(winOverlay.style.display === "flex"){
-            hideOverlays();
-        }else{
-            showWin();
+        if(debugMode){
+            forceWinOverlay();
+        }
+        return;
+    }
+
+    if(e.shiftKey && (e.key === "G" || e.key === "g")){
+        e.preventDefault();
+        if(debugMode){
+            forceGameOverOverlay();
         }
         return;
     }
@@ -1421,6 +1466,7 @@ function init(){
     updateScore();
     achievedMilestones = new Set();
     bestJustUpdated = false;
+    updateDebugIndicator();
 
     spawn(2);
     spawn(2);
