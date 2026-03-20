@@ -489,6 +489,7 @@ body{
         transform:scale(1.08);
     }
 }
+
 .overlay{
     position:absolute;
     inset:0;
@@ -534,12 +535,16 @@ body{
     color:rgba(255,255,255,.92);
     letter-spacing:.2px;
 }
+
 .overlay-stats{
     width:min(280px, 100%);
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:10px;
     margin-bottom:12px;
+}
+.overlay-stats-strong{
+    margin-bottom:14px;
 }
 .overlay-stat{
     background:rgba(255,255,255,.14);
@@ -551,11 +556,19 @@ body{
         0 6px 14px rgba(38,28,70,.10);
     backdrop-filter:blur(4px);
 }
+.overlay-stat-strong{
+    background:rgba(204,191,244,.42);
+    border:1px solid rgba(255,255,255,.20);
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.22),
+        0 8px 18px rgba(38,28,70,.14);
+    backdrop-filter:blur(4px);
+}
 .overlay-stat-label{
     display:block;
     font-size:11px;
     font-weight:700;
-    color:rgba(255,255,255,.80);
+    color:rgba(255,255,255,.84);
     letter-spacing:.4px;
     margin-bottom:6px;
 }
@@ -566,6 +579,7 @@ body{
     color:#fff;
     line-height:1;
 }
+
 .overlay-badge{
     min-height:28px;
     margin-bottom:14px;
@@ -587,6 +601,22 @@ body{
 .overlay-badge.is-hidden{
     visibility:hidden;
 }
+.tile-result-badge{
+    margin-top:-2px;
+    margin-bottom:14px;
+    padding:8px 14px;
+    min-height:32px;
+    background:rgba(255,255,255,.18);
+    color:#fff;
+    font-size:13px;
+    font-weight:800;
+    letter-spacing:.35px;
+    border-radius:999px;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.15),
+        0 6px 12px rgba(38,28,70,.10);
+}
+
 .overlay-buttons{
     display:flex;
     gap:10px;
@@ -656,7 +686,7 @@ body{
 
 <div id="app">
     <div class="version-note">
-        v2.6.6 수정 : PC용 슬라이드 210ms / 2048 엔딩 레이아웃 조정
+        v2.6.6 수정 : PC용 슬라이드 210ms / 엔딩 화면 튜닝
     </div>
 
     <div id="loading-note" class="loading-note">이미지 로딩 중...</div>
@@ -696,14 +726,12 @@ body{
             <div class="overlay-title">축하해요!</div>
             <div class="overlay-msg" id="win-msg">2048 타일을 완성했어요 ✨</div>
 
-            <div id="win-badge" class="overlay-badge is-hidden"></div>
-
-            <div class="overlay-stats">
-                <div class="overlay-stat">
+            <div class="overlay-stats overlay-stats-strong">
+                <div class="overlay-stat overlay-stat-strong">
                     <span class="overlay-stat-label">이번 점수</span>
                     <span class="overlay-stat-value" id="win-score-value">0</span>
                 </div>
-                <div class="overlay-stat">
+                <div class="overlay-stat overlay-stat-strong">
                     <span class="overlay-stat-label">최고 타일</span>
                     <span class="overlay-stat-value" id="win-max-value">2048</span>
                 </div>
@@ -720,7 +748,8 @@ body{
         <div id="gameover" class="overlay">
             <div id="gameover-img" class="overlay-img"></div>
             <div id="gameover-msg" class="overlay-msg">거의 다 왔어요. 다음 번엔 2048까지!</div>
-            <div id="gameover-tile-label" class="overlay-sub"></div>
+
+            <div id="gameover-tile-badge" class="overlay-badge tile-result-badge is-hidden"></div>
 
             <div id="gameover-badge" class="overlay-badge is-hidden"></div>
 
@@ -788,12 +817,11 @@ const gameOverOverlay = document.getElementById("gameover");
 const winImg = document.getElementById("win-img");
 const gameOverImg = document.getElementById("gameover-img");
 const winTileLabel = document.getElementById("win-tile-label");
-const gameOverTileLabel = document.getElementById("gameover-tile-label");
+const gameOverTileBadge = document.getElementById("gameover-tile-badge");
 const winMsg = document.getElementById("win-msg");
 const gameOverMsg = document.getElementById("gameover-msg");
 const winScoreValue = document.getElementById("win-score-value");
 const winMaxValue = document.getElementById("win-max-value");
-const winBadge = document.getElementById("win-badge");
 const gameOverBadge = document.getElementById("gameover-badge");
 const scoreCardEl = document.getElementById("score-card");
 const bestCardEl = document.getElementById("best-card");
@@ -882,13 +910,6 @@ function getGameOverMessageByMax(max){
     return "조금만 더 익숙해지면 금방 올라가요.";
 }
 
-function getWinBadgeText(max){
-    if(bestJustUpdated) return "NEW BEST!";
-    if(max >= 2048) return "2048 완성!";
-    if(max >= 1024) return "첫 1024 달성!";
-    return "";
-}
-
 function getGameOverBadgeText(max){
     if(bestJustUpdated) return "NEW BEST!";
     if(max >= 1024) return "첫 1024 달성!";
@@ -903,7 +924,6 @@ function showWin(){
     winTileLabel.textContent = "";
     winScoreValue.textContent = score;
     winMaxValue.textContent = max;
-    setBadge(winBadge, getWinBadgeText(max));
     winOverlay.style.display = "flex";
 }
 
@@ -913,7 +933,7 @@ function showGameOver(){
 
     gameOverImg.style.backgroundImage = `url('./images/img_${safeImgValue}.jpg')`;
     gameOverMsg.textContent = getGameOverMessageByMax(max);
-    gameOverTileLabel.textContent = `이번 판 최고 타일 ${max}`;
+    setBadge(gameOverTileBadge, `${max} 타일 완성!`);
     setBadge(gameOverBadge, getGameOverBadgeText(max));
     gameOverOverlay.style.display = "flex";
 }
@@ -1404,6 +1424,9 @@ function restart(){
     animLayer.innerHTML = "";
     tilesEl.style.visibility = "visible";
     milestoneWrapEl.innerHTML = "";
+
+    setBadge(gameOverTileBadge, "");
+    setBadge(gameOverBadge, "");
 
     board = emptyBoard();
     score = 0;
