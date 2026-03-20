@@ -505,6 +505,7 @@ body{
     padding:18px;
 }
 .overlay-img{
+    position:relative;
     width:180px;
     aspect-ratio:1 / 1;
     background-size:contain;
@@ -513,8 +514,86 @@ body{
     background-color:rgba(255,255,255,.10);
     border-radius:12px;
     margin-bottom:18px;
-    box-shadow:0 10px 22px rgba(44,34,73,.24);
+    box-shadow:
+        0 10px 22px rgba(44,34,73,.24),
+        0 0 0 1px rgba(255,255,255,.10);
+    overflow:visible;
+    isolation:isolate;
 }
+.overlay-img::before{
+    content:"";
+    position:absolute;
+    inset:-8px;
+    border-radius:18px;
+    background:
+        radial-gradient(circle,
+            rgba(255,220,120,.34) 0%,
+            rgba(255,208,92,.18) 42%,
+            rgba(255,196,70,0) 72%);
+    filter:blur(8px);
+    opacity:.95;
+    z-index:-2;
+    pointer-events:none;
+    animation:goldPulse 2.2s ease-in-out infinite;
+}
+.overlay-img::after{
+    content:"";
+    position:absolute;
+    inset:-4px;
+    border-radius:16px;
+    padding:3px;
+    background:
+        conic-gradient(
+            from 0deg,
+            rgba(255,215,120,.14) 0deg,
+            rgba(255,223,150,.24) 40deg,
+            rgba(255,245,210,.96) 72deg,
+            rgba(255,214,110,.38) 102deg,
+            rgba(255,208,92,.16) 145deg,
+            rgba(255,215,120,.10) 210deg,
+            rgba(255,245,210,.22) 280deg,
+            rgba(255,223,150,.90) 320deg,
+            rgba(255,215,120,.14) 360deg
+        );
+    -webkit-mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    -webkit-mask-composite:xor;
+    mask:
+        linear-gradient(#000 0 0) content-box,
+        linear-gradient(#000 0 0);
+    mask-composite:exclude;
+    box-shadow:
+        0 0 10px rgba(255,218,120,.44),
+        0 0 18px rgba(255,204,84,.24);
+    pointer-events:none;
+    animation:goldOrbit 2.8s linear infinite;
+    z-index:2;
+}
+@keyframes goldOrbit{
+    0%{
+        transform:rotate(0deg);
+        filter:brightness(1) saturate(1);
+    }
+    50%{
+        filter:brightness(1.12) saturate(1.08);
+    }
+    100%{
+        transform:rotate(360deg);
+        filter:brightness(1) saturate(1);
+    }
+}
+@keyframes goldPulse{
+    0%, 100%{
+        opacity:.72;
+        transform:scale(.985);
+    }
+    50%{
+        opacity:1;
+        transform:scale(1.02);
+    }
+}
+
 .overlay-title{
     margin-bottom:10px;
     font-size:22px;
@@ -534,50 +613,6 @@ body{
     font-size:14px;
     color:rgba(255,255,255,.92);
     letter-spacing:.2px;
-}
-
-.overlay-stats{
-    width:min(280px, 100%);
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:10px;
-    margin-bottom:12px;
-}
-.overlay-stats-strong{
-    margin-bottom:14px;
-}
-.overlay-stat{
-    background:rgba(255,255,255,.14);
-    border-radius:14px;
-    padding:12px 10px;
-    text-align:center;
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.16),
-        0 6px 14px rgba(38,28,70,.10);
-    backdrop-filter:blur(4px);
-}
-.overlay-stat-strong{
-    background:rgba(204,191,244,.42);
-    border:1px solid rgba(255,255,255,.20);
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.22),
-        0 8px 18px rgba(38,28,70,.14);
-    backdrop-filter:blur(4px);
-}
-.overlay-stat-label{
-    display:block;
-    font-size:11px;
-    font-weight:700;
-    color:rgba(255,255,255,.84);
-    letter-spacing:.4px;
-    margin-bottom:6px;
-}
-.overlay-stat-value{
-    display:block;
-    font-size:20px;
-    font-weight:800;
-    color:#fff;
-    line-height:1;
 }
 
 .overlay-badge{
@@ -691,11 +726,6 @@ body{
         font-size:13px;
         padding:9px 14px;
     }
-    .overlay-stats{
-        width:100%;
-        max-width:260px;
-    }
-    .overlay-stat-value{ font-size:18px; }
     .overlay button{
         min-width:110px;
         font-size:15px;
@@ -711,7 +741,7 @@ body{
 
 <div id="app">
     <div class="version-note">
-        v2.6.6 수정 : PC용 슬라이드 210ms / 엔딩 화면 튜닝
+        v2.6.7 수정 : 엔딩 이미지 골드 라인 글로우 추가
     </div>
 
     <div id="loading-note" class="loading-note">이미지 로딩 중...</div>
@@ -750,7 +780,6 @@ body{
             <div id="win-img" class="overlay-img"></div>
             <div class="overlay-title">축하해요!</div>
             <div id="win-result-badge" class="win-result-badge">2048 타일을 완성했어요 ✨</div>
-
             <div id="win-tile-label" class="overlay-sub"></div>
 
             <div class="overlay-buttons">
@@ -762,9 +791,7 @@ body{
         <div id="gameover" class="overlay">
             <div id="gameover-img" class="overlay-img"></div>
             <div id="gameover-msg" class="overlay-msg">거의 다 왔어요. 다음 번엔 2048까지!</div>
-
             <div id="gameover-tile-badge" class="overlay-badge tile-result-badge is-hidden"></div>
-
             <div id="gameover-badge" class="overlay-badge is-hidden"></div>
 
             <div class="overlay-buttons">
