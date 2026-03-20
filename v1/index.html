@@ -64,7 +64,7 @@ body{
     flex-direction:column;
     align-items:stretch;
     position:relative;
-    touch-action:manipulation;
+    touch-action:none;
     -webkit-user-select:none;
     user-select:none;
     -webkit-tap-highlight-color:transparent;
@@ -338,7 +338,7 @@ body{
         inset 0 1px 0 rgba(255,255,255,.30),
         inset 0 -1px 0 rgba(74,60,112,.05);
     overflow:hidden;
-    touch-action:manipulation;
+    touch-action:none;
     -webkit-user-select:none;
     user-select:none;
     -webkit-tap-highlight-color:transparent;
@@ -656,7 +656,7 @@ body{
 
 <div id="app">
     <div class="version-note">
-        v2.6.1 수정 : 새 게임 버튼 제거 / 타이틀 배너 탭으로 새 게임 / 화면 넘침 시 스크롤 허용
+        v2.6.2 수정 : 게임 영역 스크롤 방지 
     </div>
 
     <div id="loading-note" class="loading-note">이미지 로딩 중...</div>
@@ -733,10 +733,11 @@ body{
 
 <script>
 /*
-v2.6.1 수정점
-1) 하단/중간의 "새 게임" 버튼 제거
-2) 상단 타이틀 배너 클릭 시 restart() 실행
-3) 일부 휴대폰에서 화면이 세로로 넘칠 경우 body/html에 세로 스크롤 허용
+v2.6.2 수정점
+1) #app / #board 에 touch-action:none 적용
+2) 보드 위 touchmove 는 preventDefault() 처리
+3) 게임 조작 중 페이지가 같이 스크롤되는 현상 완화
+4) body 자체는 overflow-y:auto 유지하여 바깥 영역/스크롤바로는 스크롤 가능
 */
 
 const SIZE = 4;
@@ -1475,9 +1476,11 @@ boardEl.addEventListener("touchstart", e => {
 }, { passive:false });
 
 boardEl.addEventListener("touchmove", e => {
+    e.preventDefault();
+
     if(e.touches.length > 1){
         trackingTouch = false;
-        e.preventDefault();
+        return;
     }
 }, { passive:false });
 
