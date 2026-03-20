@@ -6,6 +6,7 @@
 <style>
 :root{
     --board-size:min(92vw,420px);
+
     --bg1:#f4effd;
     --bg2:#e9def8;
 
@@ -29,12 +30,15 @@
 
     --tile-radius:8px;
 }
-
 *{ box-sizing:border-box; }
 
-html,body{
+html, body{
     margin:0;
     min-height:100%;
+}
+
+html{
+    overflow-x:hidden;
     overflow-y:auto;
 }
 
@@ -46,259 +50,1505 @@ body{
     flex-direction:column;
     align-items:center;
     justify-content:flex-start;
+    min-height:100vh;
     padding:18px 0 24px;
     color:var(--text);
+    overflow-x:hidden;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
 }
 
 #app{
     width:var(--board-size);
     display:flex;
     flex-direction:column;
+    align-items:stretch;
+    position:relative;
     touch-action:none;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
+    flex:0 0 auto;
+}
+
+.version-note{
+    font-size:12px;
+    color:#8a82a6;
+    margin-bottom:8px;
+    text-align:center;
+}
+
+.loading-note{
+    display:none;
+    margin-bottom:10px;
+    padding:10px 12px;
+    border-radius:12px;
+    background:rgba(255,255,255,.62);
+    color:#7d7697;
+    font-size:13px;
+    text-align:center;
+    box-shadow:
+        0 6px 14px rgba(70,60,120,.04),
+        inset 0 1px 0 rgba(255,255,255,.7);
+}
+.loading-note.show{
+    display:block;
+}
+
+.debug-indicator{
+    display:none;
+    margin-bottom:8px;
+    padding:7px 10px;
+    border-radius:999px;
+    background:rgba(255,255,255,.82);
+    color:#7a5fc2;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.3px;
+    text-align:center;
+    box-shadow:
+        0 6px 14px rgba(70,60,120,.08),
+        inset 0 1px 0 rgba(255,255,255,.7);
+}
+.debug-indicator.show{
+    display:block;
+}
+
+.milestone-wrap{
+    position:absolute;
+    top:36px;
+    left:0;
+    right:0;
+    display:flex;
+    justify-content:center;
+    pointer-events:none;
+    z-index:300;
+}
+.milestone{
+    padding:10px 16px;
+    border-radius:999px;
+    background:rgba(255,255,255,.92);
+    color:#6b5f92;
+    font-size:14px;
+    font-weight:800;
+    letter-spacing:.2px;
+    box-shadow:
+        0 10px 22px rgba(70,60,120,.12),
+        inset 0 1px 0 rgba(255,255,255,.7);
+    animation:milestonePop 1.05s ease forwards;
+    backdrop-filter:blur(4px);
+}
+@keyframes milestonePop{
+    0%{
+        opacity:0;
+        transform:translateY(10px) scale(.92);
+    }
+    18%{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+    82%{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+    100%{
+        opacity:0;
+        transform:translateY(-18px) scale(1.02);
+    }
 }
 
 .title-banner{
     width:100%;
-    aspect-ratio:3.5/1;
-    background:url('./images/img_title.jpg') center/cover no-repeat;
+    aspect-ratio:3.5 / 1;
+    background-image:url('./images/img_title.jpg');
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    border:none;
     border-radius:16px;
     margin-bottom:8px;
+    box-shadow:
+        0 12px 22px rgba(82,66,140,.14),
+        inset 0 1px 0 rgba(255,255,255,.24);
     cursor:pointer;
+    transition:transform .12s ease, box-shadow .12s ease, filter .12s ease;
+    appearance:none;
+    -webkit-appearance:none;
+}
+.title-banner:hover{
+    filter:brightness(1.02) saturate(1.03);
+}
+.title-banner:active{
+    transform:scale(.992);
+}
+.title-banner:focus-visible{
+    outline:none;
+    box-shadow:
+        0 0 0 3px rgba(255,255,255,.72),
+        0 0 0 6px rgba(126,102,191,.28),
+        0 12px 22px rgba(82,66,140,.14),
+        inset 0 1px 0 rgba(255,255,255,.24);
 }
 
 .banner-desc{
+    width:100%;
     margin-bottom:10px;
     padding:10px 14px;
     border-radius:12px;
     background:rgba(255,255,255,.66);
+    backdrop-filter:blur(4px);
+    box-shadow:
+        0 6px 16px rgba(82,66,140,.05),
+        inset 0 1px 0 rgba(255,255,255,.72);
     font-size:13px;
+    line-height:1.5;
     color:#685b92;
     text-align:center;
 }
 
 .top-panel{
+    width:100%;
     display:flex;
+    align-items:stretch;
+    justify-content:space-between;
     gap:12px;
     margin-bottom:12px;
 }
 
 .score-card{
     flex:1;
-    background:linear-gradient(180deg, var(--panel1), var(--panel2));
+    position:relative;
+    overflow:hidden;
+    background:linear-gradient(180deg, var(--panel1) 0%, var(--panel2) 100%);
     border-radius:16px;
-    padding:12px;
-    text-align:center;
+    padding:12px 14px;
+    min-height:72px;
+    box-shadow:
+        0 10px 18px rgba(86,68,150,.14),
+        inset 0 1px 0 rgba(255,255,255,.22);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
 }
-
+.score-card::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:46%;
+    background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,0));
+    pointer-events:none;
+}
+.score-label{
+    font-size:12px;
+    font-weight:bold;
+    color:var(--panel-label);
+    letter-spacing:.5px;
+    margin-bottom:6px;
+    position:relative;
+    z-index:1;
+}
 .score-value{
     font-size:26px;
+    line-height:1;
     font-weight:bold;
+    color:var(--panel-value);
+    position:relative;
+    z-index:1;
+    text-shadow:0 2px 5px rgba(74, 60, 112, .14);
+}
+.score-gain{
+    position:absolute;
+    top:10px;
+    right:12px;
+    font-size:16px;
+    font-weight:700;
+    color:rgba(255,255,255,.96);
+    text-shadow:0 2px 6px rgba(74,60,112,.20);
+    pointer-events:none;
+    animation:scoreFloat .65s ease forwards;
+    z-index:4;
+}
+@keyframes scoreFloat{
+    0%{
+        opacity:0;
+        transform:translateY(6px) scale(.92);
+    }
+    18%{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+    100%{
+        opacity:0;
+        transform:translateY(-18px) scale(1.04);
+    }
+}
+.best-burst{
+    animation:bestPulse .7s ease;
+}
+.best-tag{
+    position:absolute;
+    top:10px;
+    right:10px;
+    padding:4px 8px;
+    border-radius:999px;
+    background:rgba(255,255,255,.92);
+    color:#7b6aa8;
+    font-size:10px;
+    font-weight:800;
+    letter-spacing:.4px;
+    box-shadow:0 4px 10px rgba(74,60,112,.12);
+    animation:bestTagPop .9s ease forwards;
+    pointer-events:none;
+    z-index:4;
+}
+@keyframes bestPulse{
+    0%{ transform:scale(1); }
+    35%{ transform:scale(1.06); }
+    100%{ transform:scale(1); }
+}
+@keyframes bestTagPop{
+    0%{
+        opacity:0;
+        transform:translateY(4px) scale(.92);
+    }
+    20%{
+        opacity:1;
+        transform:translateY(0) scale(1);
+    }
+    100%{
+        opacity:0;
+        transform:translateY(-10px) scale(1);
+    }
 }
 
 #board{
     position:relative;
     width:100%;
-    aspect-ratio:1;
-    background:linear-gradient(180deg, #d7c9f1, var(--board), var(--board-dark));
+    aspect-ratio:1 / 1;
+    box-sizing:border-box;
+    background:
+        linear-gradient(180deg, #d7c9f1 0%, var(--board) 54%, var(--board-dark) 100%);
+    padding:0;
     border-radius:20px;
+    box-shadow:
+        0 16px 30px rgba(84,66,146,.16),
+        inset 0 1px 0 rgba(255,255,255,.30),
+        inset 0 -1px 0 rgba(74,60,112,.05);
     overflow:hidden;
     touch-action:none;
+    -webkit-user-select:none;
+    user-select:none;
+    -webkit-tap-highlight-color:transparent;
 }
-
+#board::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    right:0;
+    height:24%;
+    background:linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0));
+    pointer-events:none;
+    z-index:0;
+}
 .grid{
     position:absolute;
-    inset:12px;
+    top:var(--pad-top);
+    left:var(--pad-x);
+    right:var(--pad-x);
+    bottom:var(--pad-bottom);
+    z-index:1;
     display:grid;
     grid-template-columns:repeat(4,1fr);
-    gap:10px;
+    grid-template-rows:repeat(4,1fr);
+    gap:var(--gap);
 }
-
 .cell{
     background:rgba(241,242,248,.46);
-    border-radius:8px;
+    border-radius:var(--tile-radius);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.24);
 }
-
-#tiles,#anim-layer{
+#tiles,
+#anim-layer{
     position:absolute;
-    inset:12px;
+    top:var(--pad-top);
+    left:var(--pad-x);
+    right:var(--pad-x);
+    bottom:var(--pad-bottom);
+    pointer-events:none;
+    z-index:2;
+    overflow:hidden;
+    border-radius:12px;
 }
-
-.tile,.anim-tile{
+.tile,
+.anim-tile{
     position:absolute;
-    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:var(--tile-radius);
     background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
 }
-
+.tile{
+    z-index:5;
+    overflow:visible;
+}
 .anim-tile{
     transition:
-        top .18s cubic-bezier(.22,.61,.36,1),
-        left .18s cubic-bezier(.22,.61,.36,1),
-        opacity .18s ease;
+        top .14s ease,
+        left .14s ease,
+        opacity .14s ease,
+        filter .14s ease;
+    z-index:20;
+    will-change:top, left, opacity, filter;
+}
+.tile-merged{
+    animation:mergeResultPop .20s ease-out;
+    will-change:transform, filter;
+    z-index:8;
+}
+.tile-merge-ring{
+    position:absolute;
+    inset:-8px;
+    border-radius:calc(var(--tile-radius) + 8px);
+    border:3px solid rgba(255,255,255,.95);
+    box-shadow:
+        0 0 0 2px rgba(255,255,255,.18),
+        0 0 14px rgba(255,255,255,.52),
+        0 0 26px rgba(255,255,255,.24);
+    opacity:0;
+    pointer-events:none;
+    animation:mergeRing .30s ease-out forwards;
+}
+.tile-merge-glow{
+    position:absolute;
+    inset:-10px;
+    border-radius:calc(var(--tile-radius) + 10px);
+    background:
+        radial-gradient(circle, rgba(255,255,255,.38) 0%, rgba(255,255,255,.14) 36%, rgba(255,255,255,0) 72%);
+    opacity:0;
+    pointer-events:none;
+    animation:mergeGlow .26s ease-out forwards;
+    mix-blend-mode:screen;
+}
+.tile-num{
+    position:absolute;
+    right:6px;
+    bottom:6px;
+    min-width:22px;
+    padding:2px 6px;
+    border-radius:999px;
+    background:rgba(255,255,255,.74);
+    color:#5f5978;
+    font-size:11px;
+    line-height:1.1;
+    font-weight:700;
+    text-align:center;
+    box-shadow:
+        0 1px 3px rgba(0,0,0,.12),
+        inset 0 1px 0 rgba(255,255,255,.5);
+    backdrop-filter:blur(2px);
+    pointer-events:none;
+}
+@keyframes mergeResultPop{
+    0%{
+        transform:scale(.90);
+        filter:brightness(1.18);
+    }
+    55%{
+        transform:scale(1.08);
+        filter:brightness(1.10);
+    }
+    100%{
+        transform:scale(1);
+        filter:brightness(1);
+    }
+}
+@keyframes mergeRing{
+    0%{
+        opacity:.95;
+        transform:scale(.74);
+    }
+    100%{
+        opacity:0;
+        transform:scale(1.10);
+    }
+}
+@keyframes mergeGlow{
+    0%{
+        opacity:.9;
+        transform:scale(.78);
+    }
+    100%{
+        opacity:0;
+        transform:scale(1.08);
+    }
+}
+.overlay{
+    position:absolute;
+    inset:0;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:rgba(67,55,111,.62);
+    color:white;
+    z-index:100;
+    border-radius:20px;
+    backdrop-filter:blur(2px);
+    padding:18px;
+}
+.overlay-img{
+    width:180px;
+    aspect-ratio:1 / 1;
+    background-size:contain;
+    background-position:center;
+    background-repeat:no-repeat;
+    background-color:rgba(255,255,255,.10);
+    border-radius:12px;
+    margin-bottom:18px;
+    box-shadow:0 10px 22px rgba(44,34,73,.24);
+}
+.overlay-title{
+    margin-bottom:10px;
+    font-size:22px;
+    font-weight:bold;
+    letter-spacing:.6px;
+}
+.overlay-msg{
+    margin:0 0 14px;
+    font-size:14px;
+    line-height:1.45;
+    color:rgba(255,255,255,.88);
+    text-align:center;
+    padding:0 20px;
+}
+.overlay-sub{
+    margin:-2px 0 14px;
+    font-size:14px;
+    color:rgba(255,255,255,.92);
+    letter-spacing:.2px;
+}
+.overlay-stats{
+    width:min(280px, 100%);
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-bottom:12px;
+}
+.overlay-stat{
+    background:rgba(255,255,255,.14);
+    border-radius:14px;
+    padding:12px 10px;
+    text-align:center;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.16),
+        0 6px 14px rgba(38,28,70,.10);
+    backdrop-filter:blur(4px);
+}
+.overlay-stat-label{
+    display:block;
+    font-size:11px;
+    font-weight:700;
+    color:rgba(255,255,255,.80);
+    letter-spacing:.4px;
+    margin-bottom:6px;
+}
+.overlay-stat-value{
+    display:block;
+    font-size:20px;
+    font-weight:800;
+    color:#fff;
+    line-height:1;
+}
+.overlay-badge{
+    min-height:28px;
+    margin-bottom:14px;
+    padding:7px 12px;
+    border-radius:999px;
+    background:rgba(255,255,255,.18);
+    color:#fff;
+    font-size:12px;
+    font-weight:800;
+    letter-spacing:.35px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.15),
+        0 6px 12px rgba(38,28,70,.10);
+}
+.overlay-badge.is-hidden{
+    visibility:hidden;
+}
+.overlay-buttons{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+.overlay button{
+    padding:12px 20px;
+    font-size:16px;
+    font-weight:bold;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    background:#f7f2ff;
+    color:#685d8c;
+    box-shadow:0 6px 14px rgba(74,60,112,.14);
+    min-width:120px;
+}
+.overlay button:active{
+    transform:scale(.98);
 }
 
+@media (max-width:420px){
+    body{
+        padding:14px 0 20px;
+    }
+    .title-banner{ border-radius:14px; }
+    .banner-desc{
+        font-size:12px;
+        padding:9px 12px;
+    }
+    .score-card{
+        min-height:68px;
+        border-radius:14px;
+    }
+    .score-value{ font-size:22px; }
+    #board{ border-radius:18px; }
+    .overlay{ border-radius:18px; }
+    .tile-num{
+        right:5px;
+        bottom:5px;
+        min-width:20px;
+        padding:2px 5px;
+        font-size:10px;
+    }
+    .overlay-msg,
+    .overlay-sub{
+        font-size:13px;
+    }
+    .milestone{
+        font-size:13px;
+        padding:9px 14px;
+    }
+    .overlay-stats{
+        width:100%;
+        max-width:260px;
+    }
+    .overlay-stat-value{ font-size:18px; }
+    .overlay button{
+        min-width:110px;
+        font-size:15px;
+    }
+}
 </style>
 </head>
 <body>
 
 <div id="app">
+    <div class="version-note">
+        v2.6.4 수정 : 전체 UI 채도 소폭 상승 / 더 맑고 선명한 톤으로 조정
+    </div>
 
-<div class="title-banner" onclick="restart()"></div>
+    <div id="loading-note" class="loading-note">이미지 로딩 중...</div>
+    <div id="debug-indicator" class="debug-indicator">DEBUG MODE ON · Shift+W 승리 / Shift+G 게임오버</div>
+    <div id="milestone-wrap" class="milestone-wrap"></div>
 
-<div class="banner-desc">
-상하좌우로 밀어 같은 숫자를 합쳐 2048을 만들어보세요!
-</div>
+    <button
+        class="title-banner"
+        id="title-banner"
+        type="button"
+        aria-label="새 게임 시작"
+        title="눌러서 새 게임 시작"
+    ></button>
 
-<div class="top-panel">
-    <div class="score-card">
-        <div>점수</div>
-        <div id="score" class="score-value">0</div>
+    <div class="banner-desc">
+        상하좌우로 밀어 같은 숫자를 합쳐 2048을 만들어보세요!
+    </div>
+
+    <div class="top-panel">
+        <div class="score-card" id="score-card">
+            <div class="score-label">현재점수</div>
+            <div class="score-value" id="score">0</div>
+        </div>
+        <div class="score-card" id="best-card">
+            <div class="score-label">최고기록</div>
+            <div class="score-value" id="best">0</div>
+        </div>
+    </div>
+
+    <div id="board">
+        <div class="grid" id="bg"></div>
+        <div id="tiles"></div>
+        <div id="anim-layer"></div>
+
+        <div id="winoverlay" class="overlay">
+            <div id="win-img" class="overlay-img"></div>
+            <div class="overlay-title">축하해요!</div>
+            <div class="overlay-msg" id="win-msg">2048 타일을 완성했어요 ✨</div>
+            <div id="win-tile-label" class="overlay-sub"></div>
+
+            <div class="overlay-stats">
+                <div class="overlay-stat">
+                    <span class="overlay-stat-label">이번 점수</span>
+                    <span class="overlay-stat-value" id="win-score-value">0</span>
+                </div>
+                <div class="overlay-stat">
+                    <span class="overlay-stat-label">최고 타일</span>
+                    <span class="overlay-stat-value" id="win-max-value">2048</span>
+                </div>
+            </div>
+
+            <div id="win-badge" class="overlay-badge is-hidden"></div>
+
+            <div class="overlay-buttons">
+                <button onclick="restart()">REPLAY</button>
+                <button onclick="copyResult('win')">결과 복사</button>
+            </div>
+        </div>
+
+        <div id="gameover" class="overlay">
+            <div id="gameover-img" class="overlay-img"></div>
+            <div id="gameover-msg" class="overlay-msg">거의 다 왔어요. 다음 번엔 2048까지!</div>
+            <div id="gameover-tile-label" class="overlay-sub"></div>
+
+            <div id="gameover-badge" class="overlay-badge is-hidden"></div>
+
+            <div class="overlay-buttons">
+                <button onclick="restart()">REPLAY</button>
+                <button onclick="copyResult('gameover')">결과 복사</button>
+            </div>
+        </div>
     </div>
 </div>
 
-<div id="board">
-    <div class="grid" id="bg"></div>
-    <div id="tiles"></div>
-    <div id="anim-layer"></div>
-</div>
-
-</div>
-
 <script>
-const SIZE=4;
-const GAP=10;
-const MOVE_MS=180;
+/*
+v2.6.4 수정점
+1) 전체 UI 채도 소폭 상승
+2) 배경/점수패널/보드판/안내문 색을 더 맑고 선명하게 조정
+3) 기존 구조와 게임 로직은 유지
+*/
 
-let board=[];
-let score=0;
+const SIZE = 4;
+const GAP = 10;
+const MOVE_MS = 140;
 
-const boardEl=document.getElementById("board");
-const tilesEl=document.getElementById("tiles");
-const animLayer=document.getElementById("anim-layer");
-const scoreEl=document.getElementById("score");
-const bg=document.getElementById("bg");
+const PRELOAD_IMAGES = [
+    "./images/img_title.jpg",
+    "./images/img_2.jpg",
+    "./images/img_4.jpg",
+    "./images/img_8.jpg",
+    "./images/img_16.jpg",
+    "./images/img_32.jpg",
+    "./images/img_64.jpg",
+    "./images/img_128.jpg",
+    "./images/img_256.jpg",
+    "./images/img_512.jpg",
+    "./images/img_1024.jpg",
+    "./images/img_2048.jpg"
+];
 
-let cellSize=0;
+const MILESTONE_VALUES = [128, 256, 512, 1024, 2048];
 
-function init(){
-    for(let i=0;i<16;i++){
-        let d=document.createElement("div");
-        d.className="cell";
-        bg.appendChild(d);
-    }
-    restart();
+let board = [];
+let score = 0;
+let best = Number(localStorage.getItem("bestScore") || 0);
+let wonShown = false;
+let moving = false;
+let debugMode = false;
+
+let cellWidth = 0;
+let cellHeight = 0;
+
+let lastSpawn = null;
+let mergeCells = [];
+
+let startX = 0;
+let startY = 0;
+let trackingTouch = false;
+
+let achievedMilestones = new Set();
+let bestJustUpdated = false;
+
+const loadingNoteEl = document.getElementById("loading-note");
+const debugIndicatorEl = document.getElementById("debug-indicator");
+const milestoneWrapEl = document.getElementById("milestone-wrap");
+const boardEl = document.getElementById("board");
+const tilesEl = document.getElementById("tiles");
+const animLayer = document.getElementById("anim-layer");
+const scoreEl = document.getElementById("score");
+const bestEl = document.getElementById("best");
+const bg = document.getElementById("bg");
+const winOverlay = document.getElementById("winoverlay");
+const gameOverOverlay = document.getElementById("gameover");
+const winImg = document.getElementById("win-img");
+const gameOverImg = document.getElementById("gameover-img");
+const winTileLabel = document.getElementById("win-tile-label");
+const gameOverTileLabel = document.getElementById("gameover-tile-label");
+const winMsg = document.getElementById("win-msg");
+const gameOverMsg = document.getElementById("gameover-msg");
+const winScoreValue = document.getElementById("win-score-value");
+const winMaxValue = document.getElementById("win-max-value");
+const winBadge = document.getElementById("win-badge");
+const gameOverBadge = document.getElementById("gameover-badge");
+const scoreCardEl = document.getElementById("score-card");
+const bestCardEl = document.getElementById("best-card");
+const titleBannerEl = document.getElementById("title-banner");
+
+bestEl.innerText = String(best);
+
+function updateDebugIndicator(){
+    debugIndicatorEl.classList.toggle("show", debugMode);
 }
 
-function restart(){
-    board=Array.from({length:4},()=>Array(4).fill(0));
-    score=0;
-    spawn(); spawn();
-    calc();
-    render();
+function toggleDebugMode(){
+    debugMode = !debugMode;
+    updateDebugIndicator();
+    showMilestone(debugMode ? "디버그 모드 ON" : "디버그 모드 OFF");
 }
 
-function spawn(){
-    let empty=[];
-    for(let r=0;r<4;r++){
-        for(let c=0;c<4;c++){
-            if(!board[r][c]) empty.push({r,c});
-        }
-    }
-    if(empty.length){
-        let p=empty[Math.floor(Math.random()*empty.length)];
-        board[p.r][p.c]=Math.random()<0.9?2:4;
-    }
+function forceWinOverlay(){
+    hideOverlays();
+    wonShown = true;
+    showWin();
 }
 
-function calc(){
-    let w=tilesEl.clientWidth;
-    cellSize=(w-(SIZE-1)*GAP)/SIZE;
+function forceGameOverOverlay(){
+    hideOverlays();
+    showGameOver();
 }
 
-function pos(r,c){
-    return{
-        top:r*(cellSize+GAP),
-        left:c*(cellSize+GAP)
+function preloadImages(srcList){
+    loadingNoteEl.classList.add("show");
+
+    const tasks = srcList.map(src => {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => resolve({ src, ok: true });
+            img.onerror = () => resolve({ src, ok: false });
+            img.src = src;
+        });
+    });
+
+    return Promise.all(tasks).finally(() => {
+        loadingNoteEl.classList.remove("show");
+    });
+}
+
+function emptyBoard(){
+    return Array.from({ length: SIZE }, () => Array(SIZE).fill(0));
+}
+
+function calculateLayout(){
+    const width = tilesEl.clientWidth;
+    const height = tilesEl.clientHeight;
+
+    cellWidth = (width - GAP * (SIZE - 1)) / SIZE;
+    cellHeight = (height - GAP * (SIZE - 1)) / SIZE;
+
+    renderBoard();
+}
+
+function pos(r, c){
+    return {
+        top: (cellHeight + GAP) * r,
+        left: (cellWidth + GAP) * c
     };
 }
 
-function render(){
-    tilesEl.innerHTML="";
-    for(let r=0;r<4;r++){
-        for(let c=0;c<4;c++){
-            let v=board[r][c];
-            if(!v) continue;
-            let t=document.createElement("div");
-            t.className="tile";
-            t.style.width=cellSize+"px";
-            t.style.height=cellSize+"px";
-            let p=pos(r,c);
-            t.style.top=p.top+"px";
-            t.style.left=p.left+"px";
-            t.style.backgroundImage=`url('./images/img_${v}.jpg')`;
-            tilesEl.appendChild(t);
+function hideOverlays(){
+    winOverlay.style.display = "none";
+    gameOverOverlay.style.display = "none";
+}
+
+function setBadge(el, text){
+    if(text){
+        el.textContent = text;
+        el.classList.remove("is-hidden");
+    }else{
+        el.textContent = "";
+        el.classList.add("is-hidden");
+    }
+}
+
+function getGameOverMessageByMax(max){
+    if(max >= 1024) return "거의 다 왔어요. 다음 번엔 2048까지!";
+    if(max >= 512) return "좋아요! 다음 판엔 더 크게 갈 수 있어요.";
+    if(max >= 256) return "흐름이 좋아요. 다음 판이 더 기대돼요.";
+    return "조금만 더 익숙해지면 금방 올라가요.";
+}
+
+function getWinBadgeText(max){
+    if(bestJustUpdated) return "NEW BEST!";
+    if(max >= 2048) return "2048 완성!";
+    if(max >= 1024) return "첫 1024 달성!";
+    return "";
+}
+
+function getGameOverBadgeText(max){
+    if(bestJustUpdated) return "NEW BEST!";
+    if(max >= 1024) return "첫 1024 달성!";
+    if(max >= 512) return "512 달성!";
+    return "";
+}
+
+function showWin(){
+    const max = Math.max(getMaxTile(), 2048);
+    winImg.style.backgroundImage = "url('./images/img_2048.jpg')";
+    winMsg.textContent = "2048 타일을 완성했어요 ✨";
+    winTileLabel.textContent = `최고 타일 ${max}`;
+    winScoreValue.textContent = score;
+    winMaxValue.textContent = max;
+    setBadge(winBadge, getWinBadgeText(max));
+    winOverlay.style.display = "flex";
+}
+
+function showGameOver(){
+    const max = getMaxTile() || 2;
+    const safeImgValue = PRELOAD_IMAGES.includes(`./images/img_${max}.jpg`) ? max : 2;
+
+    gameOverImg.style.backgroundImage = `url('./images/img_${safeImgValue}.jpg')`;
+    gameOverMsg.textContent = getGameOverMessageByMax(max);
+    gameOverTileLabel.textContent = `이번 판 최고 타일 ${max}`;
+    setBadge(gameOverBadge, getGameOverBadgeText(max));
+    gameOverOverlay.style.display = "flex";
+}
+
+function getMaxTile(){
+    let max = 0;
+    for(let r = 0; r < SIZE; r++){
+        for(let c = 0; c < SIZE; c++){
+            if(board[r][c] > max) max = board[r][c];
         }
     }
-    scoreEl.textContent=score;
+    return max;
+}
+
+function celebrateBest(){
+    bestCardEl.classList.remove("best-burst");
+    void bestCardEl.offsetWidth;
+    bestCardEl.classList.add("best-burst");
+
+    const oldTag = bestCardEl.querySelector(".best-tag");
+    if(oldTag) oldTag.remove();
+
+    const tag = document.createElement("div");
+    tag.className = "best-tag";
+    tag.textContent = "NEW BEST!";
+    bestCardEl.appendChild(tag);
+
+    setTimeout(() => {
+        bestCardEl.classList.remove("best-burst");
+        tag.remove();
+    }, 900);
+}
+
+function showScoreGain(amount){
+    if(!amount) return;
+
+    const el = document.createElement("div");
+    el.className = "score-gain";
+    el.textContent = `+${amount}`;
+    scoreCardEl.appendChild(el);
+
+    setTimeout(() => {
+        el.remove();
+    }, 700);
+}
+
+function getMilestoneMessage(value){
+    switch(value){
+        case 128: return "✨ 128 달성!";
+        case 256: return "🌟 256 도달!";
+        case 512: return "🔥 512 달성!";
+        case 1024: return "💫 1024까지 왔어요!";
+        case 2048: return "🎉 2048 완성!";
+        default: return String(value);
+    }
+}
+
+function showMilestone(value){
+    const oldBanner = milestoneWrapEl.querySelector(".milestone");
+    if(oldBanner) oldBanner.remove();
+
+    const el = document.createElement("div");
+    el.className = "milestone";
+    el.textContent = getMilestoneMessage(value);
+    milestoneWrapEl.appendChild(el);
+
+    setTimeout(() => {
+        el.remove();
+    }, 1100);
+}
+
+function checkMilestonesFromBoard(){
+    for(let r = 0; r < SIZE; r++){
+        for(let c = 0; c < SIZE; c++){
+            const value = board[r][c];
+            if(MILESTONE_VALUES.includes(value) && !achievedMilestones.has(value)){
+                achievedMilestones.add(value);
+                showMilestone(value);
+                return;
+            }
+        }
+    }
+}
+
+function updateScore(){
+    scoreEl.innerText = String(score);
+
+    bestJustUpdated = false;
+    const prevBest = best;
+
+    if(score > best){
+        best = score;
+        bestJustUpdated = true;
+        localStorage.setItem("bestScore", String(best));
+
+        if(best > prevBest){
+            celebrateBest();
+        }
+    }
+
+    bestEl.innerText = String(best);
+}
+
+function appendTileNumberBadge(el, value){
+    const badge = document.createElement("div");
+    badge.className = "tile-num";
+    badge.textContent = value;
+    el.appendChild(badge);
+}
+
+function isMergeCell(r, c){
+    return mergeCells.some(cell => cell.r === r && cell.c === c);
+}
+
+function renderBoard(){
+    if(!cellWidth || !cellHeight) return;
+
+    tilesEl.innerHTML = "";
+
+    for(let r = 0; r < SIZE; r++){
+        for(let c = 0; c < SIZE; c++){
+            const value = board[r][c];
+            if(!value) continue;
+
+            const tile = document.createElement("div");
+            tile.className = "tile";
+            tile.style.width = cellWidth + "px";
+            tile.style.height = cellHeight + "px";
+
+            const p = pos(r, c);
+            tile.style.top = p.top + "px";
+            tile.style.left = p.left + "px";
+            tile.style.backgroundImage = `url('./images/img_${value}.jpg')`;
+
+            if(isMergeCell(r, c)){
+                tile.classList.add("tile-merged");
+
+                const glow = document.createElement("div");
+                glow.className = "tile-merge-glow";
+                tile.appendChild(glow);
+
+                const ring = document.createElement("div");
+                ring.className = "tile-merge-ring";
+                tile.appendChild(ring);
+            }
+
+            appendTileNumberBadge(tile, value);
+            tilesEl.appendChild(tile);
+        }
+    }
+}
+
+function getEmptyCells(){
+    const empty = [];
+    for(let r = 0; r < SIZE; r++){
+        for(let c = 0; c < SIZE; c++){
+            if(board[r][c] === 0) empty.push({ r, c });
+        }
+    }
+    return empty;
+}
+
+function spawn(forceValue = null){
+    const empty = getEmptyCells();
+    if(empty.length === 0){
+        lastSpawn = null;
+        return;
+    }
+
+    const pick = empty[Math.floor(Math.random() * empty.length)];
+    board[pick.r][pick.c] = forceValue ?? (Math.random() < 0.9 ? 2 : 4);
+    lastSpawn = { r: pick.r, c: pick.c };
+}
+
+function has2048Tile(){
+    for(let r = 0; r < SIZE; r++){
+        for(let c = 0; c < SIZE; c++){
+            if(board[r][c] >= 2048) return true;
+        }
+    }
+    return false;
+}
+
+function isGameOver(){
+    for(let r = 0; r < SIZE; r++){
+        for(let c = 0; c < SIZE; c++){
+            if(board[r][c] === 0) return false;
+            if(c < SIZE - 1 && board[r][c] === board[r][c + 1]) return false;
+            if(r < SIZE - 1 && board[r][c] === board[r + 1][c]) return false;
+        }
+    }
+    return true;
+}
+
+function cloneBoard(src){
+    return src.map(row => [...row]);
+}
+
+function linesEqual(a, b){
+    for(let i = 0; i < a.length; i++){
+        if(a[i] !== b[i]) return false;
+    }
+    return true;
+}
+
+function slideAndMergeLineDetailed(line){
+    const items = [];
+    for(let i = 0; i < line.length; i++){
+        if(line[i] !== 0){
+            items.push({ value: line[i], from: i });
+        }
+    }
+
+    const result = Array(SIZE).fill(0);
+    const moves = [];
+    const merges = [];
+    let gained = 0;
+    let write = 0;
+
+    for(let i = 0; i < items.length; i++){
+        const cur = items[i];
+        const next = items[i + 1];
+
+        if(next && cur.value === next.value){
+            const mergedValue = cur.value * 2;
+            result[write] = mergedValue;
+            gained += mergedValue;
+
+            moves.push({
+                from: cur.from,
+                to: write,
+                value: cur.value,
+                merged: true,
+                fadeLate: false
+            });
+            moves.push({
+                from: next.from,
+                to: write,
+                value: next.value,
+                merged: true,
+                fadeLate: true
+            });
+
+            merges.push({
+                index: write,
+                value: mergedValue
+            });
+
+            i++;
+            write++;
+        }else{
+            result[write] = cur.value;
+            moves.push({
+                from: cur.from,
+                to: write,
+                value: cur.value,
+                merged: false,
+                fadeLate: false
+            });
+            write++;
+        }
+    }
+
+    return {
+        line: result,
+        gained,
+        moves,
+        merges
+    };
+}
+
+function buildMoveResult(dir){
+    const oldBoard = cloneBoard(board);
+    const newBoard = emptyBoard();
+    const animations = [];
+    const mergedCellsOut = [];
+    let moved = false;
+    let gainedTotal = 0;
+
+    if(dir === "ArrowLeft" || dir === "ArrowRight"){
+        for(let r = 0; r < SIZE; r++){
+            const original = [...oldBoard[r]];
+            const working = dir === "ArrowLeft" ? [...original] : [...original].reverse();
+            const res = slideAndMergeLineDetailed(working);
+            const finalLine = dir === "ArrowLeft" ? res.line : [...res.line].reverse();
+
+            newBoard[r] = finalLine;
+            gainedTotal += res.gained;
+
+            if(!linesEqual(original, finalLine)) moved = true;
+
+            res.moves.forEach(m => {
+                const fromC = dir === "ArrowLeft" ? m.from : (SIZE - 1 - m.from);
+                const toC = dir === "ArrowLeft" ? m.to : (SIZE - 1 - m.to);
+
+                animations.push({
+                    fromR: r,
+                    fromC,
+                    toR: r,
+                    toC,
+                    value: m.value,
+                    merged: m.merged,
+                    fadeLate: m.fadeLate
+                });
+            });
+
+            res.merges.forEach(m => {
+                const c = dir === "ArrowLeft" ? m.index : (SIZE - 1 - m.index);
+                mergedCellsOut.push({ r, c });
+            });
+        }
+    }else{
+        for(let c = 0; c < SIZE; c++){
+            const original = [];
+            for(let r = 0; r < SIZE; r++) original.push(oldBoard[r][c]);
+
+            const working = dir === "ArrowUp" ? [...original] : [...original].reverse();
+            const res = slideAndMergeLineDetailed(working);
+            const finalCol = dir === "ArrowUp" ? res.line : [...res.line].reverse();
+
+            for(let r = 0; r < SIZE; r++) newBoard[r][c] = finalCol[r];
+            gainedTotal += res.gained;
+
+            if(!linesEqual(original, finalCol)) moved = true;
+
+            res.moves.forEach(m => {
+                const fromR = dir === "ArrowUp" ? m.from : (SIZE - 1 - m.from);
+                const toR = dir === "ArrowUp" ? m.to : (SIZE - 1 - m.to);
+
+                animations.push({
+                    fromR,
+                    fromC: c,
+                    toR,
+                    toC: c,
+                    value: m.value,
+                    merged: m.merged,
+                    fadeLate: m.fadeLate
+                });
+            });
+
+            res.merges.forEach(m => {
+                const r = dir === "ArrowUp" ? m.index : (SIZE - 1 - m.index);
+                mergedCellsOut.push({ r, c });
+            });
+        }
+    }
+
+    return {
+        newBoard,
+        animations,
+        mergeCells: mergedCellsOut,
+        gained: gainedTotal,
+        moved
+    };
+}
+
+function createAnimTile(value, r, c){
+    const el = document.createElement("div");
+    el.className = "anim-tile";
+    el.style.width = cellWidth + "px";
+    el.style.height = cellHeight + "px";
+
+    const p = pos(r, c);
+    el.style.top = p.top + "px";
+    el.style.left = p.left + "px";
+    el.style.backgroundImage = `url('./images/img_${value}.jpg')`;
+
+    appendTileNumberBadge(el, value);
+    animLayer.appendChild(el);
+    return el;
+}
+
+function playMoveAnimation(animations, onDone){
+    animLayer.innerHTML = "";
+
+    if(animations.length === 0){
+        onDone();
+        return;
+    }
+
+    const animTiles = animations.map(a => {
+        const el = createAnimTile(a.value, a.fromR, a.fromC);
+        return { el, ...a };
+    });
+
+    tilesEl.style.visibility = "hidden";
+
+    requestAnimationFrame(() => {
+        animTiles.forEach(a => {
+            const p = pos(a.toR, a.toC);
+            a.el.style.top = p.top + "px";
+            a.el.style.left = p.left + "px";
+
+            if(a.merged){
+                a.el.style.filter = "brightness(1.04)";
+            }
+        });
+    });
+
+    setTimeout(() => {
+        animTiles.forEach(a => {
+            if(a.merged){
+                a.el.style.opacity = a.fadeLate ? "0" : "0.18";
+                a.el.style.filter = "brightness(1.10)";
+            }
+        });
+    }, MOVE_MS - 18);
+
+    setTimeout(() => {
+        animLayer.innerHTML = "";
+        onDone();
+    }, MOVE_MS + 16);
 }
 
 function move(dir){
-    let moved=false;
-    let newBoard=Array.from({length:4},()=>Array(4).fill(0));
+    if(moving) return;
+    if(winOverlay.style.display === "flex") return;
+    if(gameOverOverlay.style.display === "flex") return;
 
-    function process(line){
-        let arr=line.filter(v=>v);
-        for(let i=0;i<arr.length-1;i++){
-            if(arr[i]===arr[i+1]){
-                arr[i]*=2;
-                score+=arr[i];
-                arr.splice(i+1,1);
-            }
-        }
-        while(arr.length<4) arr.push(0);
-        return arr;
+    moving = true;
+    lastSpawn = null;
+    mergeCells = [];
+
+    const res = buildMoveResult(dir);
+
+    if(!res.moved){
+        moving = false;
+        return;
     }
 
-    for(let i=0;i<4;i++){
-        let line;
-        if(dir==="left"){
-            line=board[i];
-            let res=process(line);
-            newBoard[i]=res;
-        }
-        if(dir==="right"){
-            line=[...board[i]].reverse();
-            let res=process(line).reverse();
-            newBoard[i]=res;
-        }
-        if(dir==="up"){
-            line=board.map(r=>r[i]);
-            let res=process(line);
-            for(let r=0;r<4;r++) newBoard[r][i]=res[r];
-        }
-        if(dir==="down"){
-            line=board.map(r=>r[i]).reverse();
-            let res=process(line).reverse();
-            for(let r=0;r<4;r++) newBoard[r][i]=res[r];
-        }
-    }
+    score += res.gained;
+    updateScore();
+    showScoreGain(res.gained);
 
-    moved=JSON.stringify(board)!==JSON.stringify(newBoard);
-    if(!moved) return;
+    playMoveAnimation(res.animations, () => {
+        board = res.newBoard;
+        mergeCells = res.mergeCells;
 
-    board=newBoard;
-    spawn();
-    render();
+        spawn();
+        renderBoard();
+        tilesEl.style.visibility = "visible";
+
+        checkMilestonesFromBoard();
+
+        setTimeout(() => {
+            mergeCells = [];
+        }, 220);
+
+        if(!wonShown && has2048Tile()){
+            wonShown = true;
+            showWin();
+        }else if(isGameOver()){
+            showGameOver();
+        }
+
+        moving = false;
+    });
 }
 
-window.addEventListener("keydown",e=>{
-    if(e.key==="ArrowLeft") move("left");
-    if(e.key==="ArrowRight") move("right");
-    if(e.key==="ArrowUp") move("up");
-    if(e.key==="ArrowDown") move("down");
+async function copyText(text){
+    try{
+        await navigator.clipboard.writeText(text);
+        showMilestone("복사 완료!");
+    }catch(e){
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        showMilestone("복사 완료!");
+    }
+}
+
+function buildResultText(mode){
+    const max = getMaxTile() || 2;
+    const headline = mode === "win" ? "2048 완성!" : "2048 결과";
+    return `${headline}\n이번 점수: ${score}\n최고 타일: ${max}\n최고기록: ${best}`;
+}
+
+function copyResult(mode){
+    copyText(buildResultText(mode));
+}
+
+function restart(){
+    hideOverlays();
+    animLayer.innerHTML = "";
+    tilesEl.style.visibility = "visible";
+    milestoneWrapEl.innerHTML = "";
+
+    board = emptyBoard();
+    score = 0;
+    wonShown = false;
+    moving = false;
+    lastSpawn = null;
+    mergeCells = [];
+    trackingTouch = false;
+    achievedMilestones = new Set();
+    bestJustUpdated = false;
+
+    scoreEl.innerText = "0";
+    bestEl.innerText = String(best);
+
+    spawn(2);
+    spawn(2);
+    renderBoard();
+}
+
+window.addEventListener("keydown", e => {
+    if(e.shiftKey && (e.key === "D" || e.key === "d")){
+        e.preventDefault();
+        toggleDebugMode();
+        return;
+    }
+
+    if(e.shiftKey && (e.key === "W" || e.key === "w")){
+        e.preventDefault();
+        if(debugMode){
+            forceWinOverlay();
+        }
+        return;
+    }
+
+    if(e.shiftKey && (e.key === "G" || e.key === "g")){
+        e.preventDefault();
+        if(debugMode){
+            forceGameOverOverlay();
+        }
+        return;
+    }
+
+    if(e.key === "Escape"){
+        hideOverlays();
+        return;
+    }
+
+    if(["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)){
+        e.preventDefault();
+        move(e.key);
+    }
 });
 
-init();
-</script>
+boardEl.addEventListener("touchstart", e => {
+    if(e.touches.length !== 1){
+        trackingTouch = false;
+        e.preventDefault();
+        return;
+    }
 
+    trackingTouch = true;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+}, { passive:false });
+
+boardEl.addEventListener("touchmove", e => {
+    e.preventDefault();
+
+    if(e.touches.length > 1){
+        trackingTouch = false;
+        return;
+    }
+}, { passive:false });
+
+boardEl.addEventListener("touchend", e => {
+    if(!trackingTouch) return;
+    if(e.changedTouches.length !== 1) return;
+
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+
+    trackingTouch = false;
+
+    if(Math.max(Math.abs(dx), Math.abs(dy)) < 30) return;
+
+    if(Math.abs(dx) > Math.abs(dy)){
+        move(dx > 0 ? "ArrowRight" : "ArrowLeft");
+    }else{
+        move(dy > 0 ? "ArrowDown" : "ArrowUp");
+    }
+}, { passive:true });
+
+boardEl.addEventListener("touchcancel", () => {
+    trackingTouch = false;
+}, { passive:true });
+
+titleBannerEl.addEventListener("click", () => {
+    restart();
+});
+
+document.addEventListener("gesturestart", e => {
+    e.preventDefault();
+}, { passive:false });
+
+document.addEventListener("gesturechange", e => {
+    e.preventDefault();
+}, { passive:false });
+
+document.addEventListener("gestureend", e => {
+    e.preventDefault();
+}, { passive:false });
+
+function init(){
+    if(bg.children.length === 0){
+        for(let i = 0; i < 16; i++){
+            const d = document.createElement("div");
+            d.className = "cell";
+            bg.appendChild(d);
+        }
+    }
+
+    board = emptyBoard();
+    updateScore();
+    achievedMilestones = new Set();
+    bestJustUpdated = false;
+    updateDebugIndicator();
+
+    spawn(2);
+    spawn(2);
+
+    requestAnimationFrame(() => {
+        calculateLayout();
+    });
+
+    window.addEventListener("resize", calculateLayout);
+}
+
+preloadImages(PRELOAD_IMAGES).then(() => {
+    init();
+});
+</script>
 </body>
 </html>
