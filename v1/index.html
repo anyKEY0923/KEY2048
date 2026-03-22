@@ -4,202 +4,112 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <style>
-:root{
-    --board-size:min(92vw,420px);
-    --bg1:#f1f2fb;
-    --bg2:#e4e8f6;
-    --board:#c5cbe6;
-    --board-dark:#adb6da;
-    --panel1:#bdb4ee;
-    --panel2:#a493e4;
-    --panel-label:#f7f7ff;
-    --panel-value:#ffffff;
-    --text:#5a5f86;
-    --sub:#747a9f;
-    --gap:10px;
-    --pad-x:10px;
-    --pad-top:12px;
-    --pad-bottom:10px;
-    --tile-radius:8px;
+:root {
+    --board-size: min(92vw, 420px);
+    --bg1: #f1f2fb;
+    --bg2: #e4e8f6;
+    --board: #c5cbe6;
+    --board-dark: #adb6da;
+    --panel1: #bdb4ee;
+    --panel2: #a493e4;
+    --text: #5a5f86;
+    --gap: 10px;
+    --tile-radius: 8px;
 }
-*{ box-sizing:border-box; }
-html, body{ margin:0; min-height:100%; }
-html{ overflow-x:hidden; overflow-y:auto; }
-body{
+* { box-sizing: border-box; }
+body {
     background: radial-gradient(circle at top, #ffffff 0%, var(--bg1) 38%, var(--bg2) 100%);
-    font-family:Arial, sans-serif;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:flex-start;
-    min-height:100vh;
-    padding:18px 0 24px;
-    color:var(--text);
-    overflow-x:hidden;
+    font-family: Arial, sans-serif;
+    display: flex; flex-direction: column; align-items: center;
+    min-height: 100vh; margin: 0; padding: 20px 0;
+    color: var(--text); overflow-x: hidden;
 }
-
-#app{
-    width:var(--board-size);
-    display:flex;
-    flex-direction:column;
-    align-items:stretch;
-    position:relative;
-    touch-action:none;
-    -webkit-user-select:none;
-    user-select:none;
-    flex:0 0 auto;
+#app { width: var(--board-size); position: relative; }
+.top-panel { display: flex; gap: 12px; margin-bottom: 15px; width: 100%; }
+.score-card {
+    flex: 1; background: linear-gradient(180deg, var(--panel1), var(--panel2));
+    border-radius: 16px; padding: 10px; text-align: center; color: white;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.1);
 }
-
-.version-note{ font-size:12px; color:#8a90b0; margin-bottom:8px; text-align:center; }
-
-.title-banner{
-    width:100%;
-    aspect-ratio:3.5 / 1;
-    background-image:url('./images/img_title.jpg');
-    background-size:cover;
-    background-position:center;
-    border:none;
-    border-radius:16px;
-    margin-bottom:8px;
-    box-shadow: 0 12px 22px rgba(84,96,156,.12);
-    cursor:pointer;
-    transition:transform .12s ease;
+.score-value { font-size: 24px; font-weight: bold; }
+#board {
+    position: relative; width: 100%; aspect-ratio: 1/1;
+    background: var(--board); border-radius: 20px; padding: 10px;
+    touch-action: none;
 }
-
-.top-panel{ width:100%; display:flex; gap:12px; margin-bottom:12px; }
-.score-card{
-    flex:1;
-    position:relative;
-    background:linear-gradient(180deg, var(--panel1) 0%, var(--panel2) 100%);
-    border-radius:16px;
-    padding:12px 14px;
-    min-height:72px;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
+.grid {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr); gap: var(--gap);
+    width: 100%; height: 100%;
 }
-.score-value{ font-size:26px; font-weight:bold; color:var(--panel-value); }
+.cell { background: rgba(255,255,255,0.3); border-radius: var(--tile-radius); }
+#tiles { position: absolute; top: 10px; left: 10px; right: 10px; bottom: 10px; }
 
-#board{
-    position:relative;
-    width:100%;
-    aspect-ratio:1 / 1;
-    background: linear-gradient(180deg, #d3daf0 0%, var(--board) 56%, var(--board-dark) 100%);
-    border-radius:20px;
-    overflow:hidden;
-}
-
-.grid{
-    position:absolute;
-    top:var(--pad-top); left:var(--pad-x); right:var(--pad-x); bottom:var(--pad-bottom);
-    display:grid; grid-template-columns:repeat(4,1fr); grid-template-rows:repeat(4,1fr); gap:var(--gap);
-}
-.cell{ background:rgba(239,242,250,.52); border-radius:var(--tile-radius); }
-
-#tiles, #anim-layer{
-    position:absolute;
-    top:var(--pad-top); left:var(--pad-x); right:var(--pad-x); bottom:var(--pad-bottom);
-    pointer-events:none;
-}
-
+/* 움찔거림 방지 핵심 CSS */
 .tile {
-    position:absolute;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:var(--tile-radius);
-    background-size:cover;
-    background-position:center;
-    /* 움찔거림 방지를 위한 핵심 설정 */
+    position: absolute;
+    border-radius: var(--tile-radius);
+    background-size: cover; background-position: center;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: bold; color: #5a5f86;
+    transition: transform 0.15s ease-out; /* 위치 이동 애니메이션 */
     will-change: transform;
-    transform: translateZ(0);
-    backface-visibility: hidden;
-    transition: top 0.15s ease, left 0.15s ease, transform 0.1s ease;
+    transform: translateZ(0); /* GPU 가속 */
 }
-
-.tile-num{
-    position:absolute; right:6px; bottom:6px; min-width:22px; padding:2px 6px;
-    border-radius:999px; background:rgba(255,255,255,.74); color:#5f6585;
-    font-size:11px; font-weight:700; backdrop-filter:blur(2px);
+.tile-num {
+    position: absolute; right: 5px; bottom: 5px;
+    background: rgba(255,255,255,0.8); padding: 2px 6px;
+    border-radius: 10px; font-size: 12px;
 }
-
-.overlay{
-    position:absolute; inset:0; display:none; flex-direction:column; align-items:center;
-    justify-content:center; background:rgba(65,72,116,.8); color:white; z-index:100; border-radius:20px;
+.overlay {
+    position: absolute; inset: 0; background: rgba(0,0,0,0.5);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    color: white; border-radius: 20px; z-index: 100;
 }
-.overlay button{
-    padding:12px 20px; font-size:16px; font-weight:800; border:none; border-radius:12px;
-    cursor:pointer; background:white; color:var(--panel2);
+button {
+    padding: 10px 20px; border: none; border-radius: 8px;
+    background: white; color: var(--panel2); cursor: pointer; font-weight: bold;
 }
 </style>
 </head>
 <body>
 
 <div id="app">
-    <div class="version-note">다시 시작하려면 복실이를 눌러주세요11.</div>
-    <button class="title-banner" id="title-banner" onclick="restart()"></button>
-
     <div class="top-panel">
-        <div class="score-card">
-            <div style="color:white; font-size:12px;">현재점수</div>
-            <div class="score-value" id="score">0</div>
-        </div>
-        <div class="score-card">
-            <div style="color:white; font-size:12px;">최고기록</div>
-            <div class="score-value" id="best">0</div>
-        </div>
+        <div class="score-card"><div>SCORE</div><div id="score" class="score-value">0</div></div>
+        <div class="score-card"><div>BEST</div><div id="best" class="score-value">0</div></div>
     </div>
-
     <div id="board">
         <div class="grid" id="bg"></div>
         <div id="tiles"></div>
-        <div id="winoverlay" class="overlay">
-            <h2>축하합니다!</h2>
-            <button onclick="restart()">다시 시작</button>
-        </div>
-        <div id="gameover" class="overlay">
-            <h2>게임 오버</h2>
-            <button onclick="restart()">다시 도전</button>
-        </div>
+        <div id="winoverlay" class="overlay"><h2>YOU WIN!</h2><button onclick="restart()">RESTART</button></div>
+        <div id="gameover" class="overlay"><h2>GAME OVER</h2><button onclick="restart()">TRY AGAIN</button></div>
     </div>
 </div>
 
 <script>
 const SIZE = 4;
-const GAP = 10;
-let board = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
+let board = [];
 let score = 0;
 let best = localStorage.getItem("bestScore") || 0;
 
-const tilesEl = document.getElementById("tiles");
-const scoreEl = document.getElementById("score");
-const bestEl = document.getElementById("best");
-const bgEl = document.getElementById("bg");
-
-// 초기 배경 그리드 생성
-for(let i=0; i<SIZE*SIZE; i++) {
-    const cell = document.createElement("div");
-    cell.className = "cell";
-    bgEl.appendChild(cell);
-}
+// 초기 그리드 생성
+const bg = document.getElementById("bg");
+for(let i=0; i<16; i++) bg.innerHTML += '<div class="cell"></div>';
 
 function init() {
     board = Array(SIZE).fill().map(() => Array(SIZE).fill(0));
     score = 0;
-    bestEl.innerText = best;
-    tilesEl.innerHTML = "";
-    addRandom();
-    addRandom();
+    document.getElementById("best").innerText = best;
+    document.getElementById("tiles").innerHTML = "";
+    addRandom(); addRandom();
     render();
 }
 
 function addRandom() {
     let empty = [];
     for(let r=0; r<SIZE; r++) {
-        for(let c=0; c<SIZE; c++) {
-            if(board[r][c] === 0) empty.push({r,c});
-        }
+        for(let c=0; c<SIZE; c++) if(board[r][c] === 0) empty.push({r,c});
     }
     if(empty.length > 0) {
         let {r, c} = empty[Math.floor(Math.random()*empty.length)];
@@ -207,82 +117,14 @@ function addRandom() {
     }
 }
 
+// 타일 렌더링 최적화: 위치만 transform으로 조정
 function render() {
-    scoreEl.innerText = score;
-    const rect = bgEl.getBoundingClientRect();
-    const cellW = (rect.width - (GAP * (SIZE - 1))) / SIZE;
-    const cellH = (rect.height - (GAP * (SIZE - 1))) / SIZE;
+    document.getElementById("score").innerText = score;
+    const tilesContainer = document.getElementById("tiles");
+    const containerRect = tilesContainer.getBoundingClientRect();
+    const cellSize = (containerRect.width - (10 * (SIZE - 1))) / SIZE;
 
-    // 현재 화면에 있는 타일 ID들 추적
-    const currentTileIds = new Set();
+    // 현재 보드에 있어야 할 타일들의 정보를 수집
+    let activeIds = [];
 
-    for(let r=0; r<SIZE; r++) {
-        for(let c=0; c<SIZE; c++) {
-            const val = board[r][c];
-            if(val > 0) {
-                const tileId = `tile-val-${r}-${c}`; // 위치 기반이 아닌 상태 기반 ID (간소화)
-                currentTileIds.add(tileId);
-                
-                let tileEl = document.getElementById(tileId);
-                if(!tileEl) {
-                    tileEl = document.createElement("div");
-                    tileEl.id = tileId;
-                    tileEl.className = "tile";
-                    tileEl.innerHTML = `<div class="tile-num">${val}</div>`;
-                    tilesEl.appendChild(tileEl);
-                }
-
-                tileEl.style.width = cellW + "px";
-                tileEl.style.height = cellH + "px";
-                tileEl.style.top = (r * (cellH + GAP)) + "px";
-                tileEl.style.left = (c * (cellW + GAP)) + "px";
-                tileEl.style.backgroundImage = `url('./images/img_${val}.jpg')`;
-                
-                // 값이 바뀌었을 경우 숫자 업데이트
-                const numEl = tileEl.querySelector(".tile-num");
-                if(numEl.innerText != val) numEl.innerText = val;
-            }
-        }
-    }
-
-    // 보드에 없는 데이터인데 DOM에 남아있는 타일 삭제
-    const allTiles = tilesEl.querySelectorAll(".tile");
-    allTiles.forEach(t => {
-        if(!currentTileIds.has(t.id)) tilesEl.removeChild(t);
-    });
-}
-
-function move(dir) {
-    let moved = false;
-    // 방향별 이동 로직 (기존 로직 사용)
-    // 이동 성공 시 moved = true;
-    
-    // 임시 이동 로직 (상하좌우 키 입력 대응용)
-    const backup = JSON.stringify(board);
-    
-    // 실제 게임 로직은 생략되어 있으나, 이동 후에는 반드시 render() 호출
-    if (moved) {
-        addRandom();
-        render();
-        checkGameOver();
-    }
-}
-
-function restart() {
-    document.getElementById("winoverlay").style.display = "none";
-    document.getElementById("gameover").style.display = "none";
-    init();
-}
-
-window.addEventListener("keydown", (e) => {
-    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(e.key)) {
-        // 실제 이동 함수 호출 부분
-        render(); 
-    }
-});
-
-// 시작
-init();
-</script>
-</body>
-</html>
+    for(let r=0;
