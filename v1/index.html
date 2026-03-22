@@ -866,23 +866,6 @@ body{
     }
 }
 
-
-.preload-stage{
-    position:fixed;
-    left:-99999px;
-    top:-99999px;
-    width:1px;
-    height:1px;
-    overflow:hidden;
-    opacity:0;
-    pointer-events:none;
-}
-.preload-stage img{
-    display:block;
-    width:1px;
-    height:1px;
-}
-
 @media (max-width:420px){
     body{
         padding:14px 0 20px;
@@ -935,7 +918,7 @@ body{
 
 <div id="app">
     <div class="version-note">
-        v1.0 Release : 03.22.2026
+        다시 시작하려면 복실이를 눌러주세요.
     </div>
 
     <div id="loading-note" class="loading-note">이미지 로딩 중...</div>
@@ -991,7 +974,9 @@ body{
                     <span class="gold-star sm" style="--x:1%; --y:26%; --blinkDelay:-0.8s; --blinkDur:2.6s; --floatDelay:-1.5s; --floatDur:4.7s; --mx1:-1px; --my1:0px; --mx2:1px; --my2:-1px; --mx3:0px; --my3:1px;"></span>
                     <span class="gold-star sm" style="--x:76%; --y:99%; --blinkDelay:-1.9s; --blinkDur:2.9s; --floatDelay:-0.9s; --floatDur:4.6s; --mx1:0px; --my1:1px; --mx2:-1px; --my2:0px; --mx3:1px; --my3:-1px;"></span>
                 </div>
-
+    <div class="control-hint">
+        방향키 또는 스와이프로 플레이할 수 있어요.
+    </div>
                 <div class="gold-orbit">
                     <span class="gold-comet"></span>
                     <span class="gold-comet"></span>
@@ -1046,8 +1031,6 @@ body{
     </div>
 </div>
 
-<div id="preload-stage" class="preload-stage" aria-hidden="true"></div>
-
 <script>
 const SIZE = 4;
 const GAP = 10;
@@ -1055,13 +1038,20 @@ const MOVE_MS = 240;
 const MOVE_MS_STEP = 28;
 const MOVE_MS_MAX = 296;
 
-const PRELOAD_TILE_VALUES = [2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048];
 const PRELOAD_IMAGES = [
     "./images/img_title.jpg",
-    ...PRELOAD_TILE_VALUES.map(v => `./images/img_${v}.jpg`)
+    "./images/img_2.jpg",
+    "./images/img_4.jpg",
+    "./images/img_8.jpg",
+    "./images/img_16.jpg",
+    "./images/img_32.jpg",
+    "./images/img_64.jpg",
+    "./images/img_128.jpg",
+    "./images/img_256.jpg",
+    "./images/img_512.jpg",
+    "./images/img_1024.jpg",
+    "./images/img_2048.jpg"
 ];
-
-const imageCache = new Map();
 
 const MILESTONE_VALUES = [128, 256, 512, 1024, 2048];
 
@@ -1106,7 +1096,6 @@ const gameOverBadge = document.getElementById("gameover-badge");
 const scoreCardEl = document.getElementById("score-card");
 const bestCardEl = document.getElementById("best-card");
 const titleBannerEl = document.getElementById("title-banner");
-const preloadStageEl = document.getElementById("preload-stage");
 
 bestEl.innerText = String(best);
 
@@ -1131,62 +1120,21 @@ function forceGameOverOverlay(){
     showGameOver();
 }
 
-function buildTileImageSrc(value){
-    return `./images/img_${value}.jpg`;
-}
-
-function getSafeTileValue(value){
-    return PRELOAD_TILE_VALUES.includes(value) ? value : 2;
-}
-
-function getTileImageSrc(value){
-    const safeValue = getSafeTileValue(value);
-    const src = buildTileImageSrc(safeValue);
-    return imageCache.get(src)?.src || src;
-}
-
-function preloadSingleImage(src){
-    return new Promise(resolve => {
-        const img = new Image();
-        img.decoding = "async";
-
-        img.onload = async () => {
-            try{
-                if(typeof img.decode === "function"){
-                    await img.decode();
-                }
-            }catch(_e){}
-            imageCache.set(src, img);
-            resolve();
-        };
-
-        img.onerror = () => {
-            resolve();
-        };
-
-        img.src = src;
-    });
-}
-
-async function preloadImages(srcList){
+function preloadImages(srcList){
     loadingNoteEl.classList.add("show");
 
-    for(const src of srcList){
-        await preloadSingleImage(src);
-    }
-
-    preloadStageEl.innerHTML = "";
-    srcList.forEach(src => {
-        const cached = imageCache.get(src);
-        if(!cached) return;
-
-        const domImg = document.createElement("img");
-        domImg.alt = "";
-        domImg.src = cached.src;
-        preloadStageEl.appendChild(domImg);
+    const tasks = srcList.map(src => {
+        return new Promise(resolve => {
+            const img = new Image();
+            img.onload = () => resolve({ src, ok: true });
+            img.onerror = () => resolve({ src, ok: false });
+            img.src = src;
+        });
     });
 
-    loadingNoteEl.classList.remove("show");
+    return Promise.all(tasks).finally(() => {
+        loadingNoteEl.classList.remove("show");
+    });
 }
 
 function emptyBoard(){
@@ -1240,7 +1188,7 @@ function getGameOverBadgeText(max){
 }
 
 function showWin(){
-    winImg.style.backgroundImage = `url('${getTileImageSrc(2048)}')`;
+    winImg.style.backgroundImage = "url('./images/img_2048.jpg')";
     winResultBadge.textContent = "2048 타일을 완성했어요!";
     winTileLabel.textContent = "";
     winOverlay.style.display = "flex";
@@ -1385,7 +1333,19 @@ function renderBoard(){
             const p = pos(r, c);
             tile.style.top = p.top + "px";
             tile.style.left = p.left + "px";
-            tile.style.backgroundImage = `url('${getTileImageSrc(value)}')`;
+            tile.style.backgroundImage = `url('./images/img_${value}.jpg')`;
+
+            if(isMergeCell(r, c)){
+                tile.classList.add("tile-merged");
+
+                const glow = document.createElement("div");
+                glow.className = "tile-merge-glow";
+                tile.appendChild(glow);
+
+                const ring = document.createElement("div");
+                ring.className = "tile-merge-ring";
+                tile.appendChild(ring);
+            }
 
             appendTileNumberBadge(tile, value);
             tilesEl.appendChild(tile);
@@ -1611,35 +1571,8 @@ function createAnimTile(value, r, c){
     const p = pos(r, c);
     el.style.top = p.top + "px";
     el.style.left = p.left + "px";
-    el.style.backgroundImage = `url('${getTileImageSrc(value)}')`;
+    el.style.backgroundImage = `url('./images/img_${value}.jpg')`;
     el.style.transform = "translate3d(0,0,0)";
-
-    appendTileNumberBadge(el, value);
-    animLayer.appendChild(el);
-    return el;
-}
-
-function createMergeImpactTile(value, r, c){
-    const el = document.createElement("div");
-    el.className = "anim-tile tile-merged";
-    el.style.width = cellWidth + "px";
-    el.style.height = cellHeight + "px";
-
-    const p = pos(r, c);
-    el.style.top = p.top + "px";
-    el.style.left = p.left + "px";
-    el.style.backgroundImage = `url('${getTileImageSrc(value)}')`;
-    el.style.transform = "translate3d(0,0,0)";
-    el.style.zIndex = "26";
-    el.style.pointerEvents = "none";
-
-    const glow = document.createElement("div");
-    glow.className = "tile-merge-glow";
-    el.appendChild(glow);
-
-    const ring = document.createElement("div");
-    ring.className = "tile-merge-ring";
-    el.appendChild(ring);
 
     appendTileNumberBadge(el, value);
     animLayer.appendChild(el);
@@ -1680,26 +1613,12 @@ function playMoveAnimation(animations, onDone){
         });
     });
 
-    const mergeImpactMap = new Set();
-
     animTiles.forEach(a => {
         if(a.merged){
-            const impactDelay = Math.max(70, a.duration - 48);
-
             setTimeout(() => {
-                a.el.style.opacity = a.fadeLate ? "0" : "0.10";
-                a.el.style.filter = "brightness(1.12)";
-            }, impactDelay);
-
-            if(!a.fadeLate){
-                const impactKey = `${a.toR},${a.toC}`;
-                if(!mergeImpactMap.has(impactKey)){
-                    mergeImpactMap.add(impactKey);
-                    setTimeout(() => {
-                        createMergeImpactTile(a.value * 2, a.toR, a.toC);
-                    }, impactDelay - 6);
-                }
-            }
+                a.el.style.opacity = a.fadeLate ? "0" : "0.18";
+                a.el.style.filter = "brightness(1.10)";
+            }, Math.max(80, a.duration - 26));
         }
     });
 
@@ -1731,13 +1650,18 @@ function move(dir){
 
     playMoveAnimation(res.animations, () => {
         board = res.newBoard;
-        mergeCells = [];
+        mergeCells = res.mergeCells;
 
         spawn();
         renderBoard();
         tilesEl.style.visibility = "visible";
 
         checkMilestonesFromBoard();
+
+        setTimeout(() => {
+            mergeCells = [];
+            renderBoard();
+        }, 260);
 
         if(!wonShown && has2048Tile()){
             wonShown = true;
@@ -1918,8 +1842,9 @@ function init(){
     window.addEventListener("resize", calculateLayout);
 }
 
-init();
-preloadImages(PRELOAD_IMAGES);
+preloadImages(PRELOAD_IMAGES).then(() => {
+    init();
+});
 </script>
 </body>
 </html>
