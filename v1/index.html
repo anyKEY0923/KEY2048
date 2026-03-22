@@ -297,6 +297,8 @@ body{
 }
 
 .tile{
+}
+.tile.spawn{
     animation:spawnIn .18s ease-out;
 }
 @keyframes spawnIn{
@@ -1095,6 +1097,10 @@ function renderBoard(){
             tile.style.left = p.left + "px";
             tile.style.backgroundImage = `url('${getTileImageSrc(value)}')`;
 
+            if(lastSpawn && lastSpawn.r === r && lastSpawn.c === c){
+                tile.classList.add("spawn");
+            }
+
             if(mergeCells.some(m => m.r === r && m.c === c)){
                 tile.classList.add("merge-pop");
             }
@@ -1203,6 +1209,7 @@ function move(dir){
 
         setTimeout(() => {
             mergeCells = [];
+            lastSpawn = null;
             renderBoard();
         }, 260);
 
